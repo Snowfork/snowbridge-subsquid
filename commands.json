@@ -61,14 +61,26 @@
     },
     "serve:prod": {
       "description": "Start the GraphQL API server with caching and limits",
-      "cmd": ["squid-graphql-server",
-        "--dumb-cache", "in-memory",
-        "--dumb-cache-ttl", "1000",
-        "--dumb-cache-size", "100",
-        "--dumb-cache-max-age", "1000" ]
+      "cmd": [
+        "squid-graphql-server",
+        "--dumb-cache",
+        "in-memory",
+        "--dumb-cache-ttl",
+        "1000",
+        "--dumb-cache-size",
+        "100",
+        "--dumb-cache-max-age",
+        "1000"
+      ]
     },
     "check-updates": {
-      "cmd": ["npx", "--yes", "npm-check-updates", "--filter=/subsquid/", "--upgrade"],
+      "cmd": [
+        "npx",
+        "--yes",
+        "npm-check-updates",
+        "--filter=/subsquid/",
+        "--upgrade"
+      ],
       "hidden": true
     },
     "bump": {
@@ -79,6 +91,15 @@
     "open": {
       "description": "Open a local browser window",
       "cmd": ["npx", "--yes", "opener"]
+    },
+    "generateMetaForBridgeHub": {
+      "description": "Generate metadata for bridge hub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://bridge-hub-polkadot-rpc.dwellir.com",
+        "--out=bridgehub-versions.jsonl"
+      ]
     }
   }
 }
