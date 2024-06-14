@@ -100,6 +100,9 @@
         "--rpc=wss://bridge-hub-polkadot-rpc.dwellir.com",
         "--out=bridgehub-versions.jsonl"
       ]
+    },
+    "prettier": {
+      "cmd": ["npx", "prettier", ".", "--write"]
     }
   }
 }
