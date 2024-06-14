@@ -12,4 +12,3 @@ services:
     command: ["postgres", "-c", "log_statement=all"]
     volumes:
       - ./data/db:/var/lib/postgresql/data
-
