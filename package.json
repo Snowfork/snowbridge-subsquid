@@ -23,6 +23,8 @@
     "@subsquid/typeorm-codegen": "^2.0.0",
     "@types/node": "^20.12.7",
     "typescript": "^5.4.5",
-    "prettier": "^2.8.8"
+    "prettier": "^2.8.8",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0"
   }
 }

@@ -1,0 +1,22 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch process inbound",
+      "runtimeArgs": ["-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["lib/main.js"],
+      "env": {
+        // "NODE_ENV": "rococo_sepolia",
+        // "REACT_APP_INFURA_KEY": "1989f3c5cbc549d9b5c37f64e948fa58",
+        // "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/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"
+      },
+      "console": "internalConsole"
+    }
+  ]
+}
