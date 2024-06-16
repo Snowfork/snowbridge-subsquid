@@ -11,4 +11,4 @@ services:
       - "${DB_PORT}:5432"
     command: ["postgres", "-c", "log_statement=all"]
     volumes:
-      - ./data/db-bridgehub:/var/lib/postgresql/data
+      - ./data/db:/var/lib/postgresql/data

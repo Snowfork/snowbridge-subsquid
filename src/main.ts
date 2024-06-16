@@ -1,22 +1,28 @@
 import { TypeormDatabase, Store } from "@subsquid/typeorm-store";
-import { In } from "typeorm";
-import * as ss58 from "@subsquid/ss58";
-import assert from "assert";
-
 import { processor, ProcessorContext } from "./processor";
-import { InboundMessage } from "./model";
+import { InboundMessage, OutboundMessage } from "./model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
+import assert from "assert";
+
+export type Messages = {
+  inboundMessages: InboundMessage[];
+  outboundMessages: OutboundMessage[];
+};
 
 processor.run(new TypeormDatabase({ supportHotBlocks: true }), async (ctx) => {
-  let messages: InboundMessage[] = getTransferEvents(ctx);
+  let messages: Messages = fetchBridgeEvents(ctx);
 
-  await ctx.store.insert(messages);
+  await ctx.store.save(messages.inboundMessages);
+
+  await ctx.store.save(messages.outboundMessages);
+
 });
 
-function getTransferEvents(ctx: ProcessorContext<Store>): InboundMessage[] {
+function fetchBridgeEvents(ctx: ProcessorContext<Store>): Messages {
   // Filters and decodes the arriving events
-  let messages: InboundMessage[] = [];
+  let inboundMessages: InboundMessage[] = [],
+    outboundMessages: OutboundMessage[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (event.name == events.ethereumInboundQueue.messageReceived.name) {
@@ -28,21 +34,40 @@ function getTransferEvents(ctx: ProcessorContext<Store>): InboundMessage[] {
           throw new Error("Unsupported spec");
         }
 
-        assert(
-          block.header.timestamp,
-          `Got an undefined timestamp at block ${block.header.height}`
+        inboundMessages.push(
+          new InboundMessage({
+            id: event.id,
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: rec.messageId.toString(),
+            channelId: rec.channelId.toString(),
+            nonce: Number(rec.nonce),
+          })
         );
+      }
 
-        messages.push({
-          id: event.id,
-          blockNumber: block.header.height,
-          timestamp: new Date(block.header.timestamp),
-          messageId: Buffer.from(rec.messageId).toString("hex"),
-          channelId: Buffer.from(rec.channelId).toString("hex"),
-          nonce: Number(rec.nonce),
-        });
+      if (event.name == events.ethereumOutboundQueue.messageAccepted.name) {
+        let rec: { id: Bytes; nonce: bigint };
+        if (events.ethereumOutboundQueue.messageAccepted.v1002000.is(event)) {
+          rec =
+            events.ethereumOutboundQueue.messageAccepted.v1002000.decode(event);
+        } else {
+          throw new Error("Unsupported spec");
+        }
+
+        outboundMessages.push(
+          new OutboundMessage({
+            id: event.id,
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: rec.id.toString(),
+            // Wait for https://github.com/Snowfork/polkadot-sdk/pull/147
+            // channelId: rec.channelId.toString(),
+            nonce: Number(rec.nonce),
+          })
+        );
       }
     }
   }
-  return messages;
+  return { inboundMessages, outboundMessages };
 }

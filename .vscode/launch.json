@@ -8,9 +8,9 @@
       "type": "node",
       "request": "launch",
       "name": "Launch process inbound",
-      "runtimeArgs": ["-r", "dotenv/config"],
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["lib/main.js"],
+      "args": ["src/main.ts"],
       "env": {
         // "NODE_ENV": "rococo_sepolia",
         // "REACT_APP_INFURA_KEY": "1989f3c5cbc549d9b5c37f64e948fa58",

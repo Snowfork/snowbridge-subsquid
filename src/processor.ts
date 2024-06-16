@@ -30,7 +30,10 @@ export const processor = new SubstrateBatchProcessor()
     from: 2776300,
   })
   .addEvent({
-    name: [events.ethereumInboundQueue.messageReceived.name],
+    name: [
+      events.ethereumInboundQueue.messageReceived.name,
+      events.ethereumOutboundQueue.messageAccepted.name,
+    ],
     extrinsic: true,
   })
   .setFields({
