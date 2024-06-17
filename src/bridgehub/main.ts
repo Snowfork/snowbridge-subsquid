@@ -1,6 +1,6 @@
 import { TypeormDatabase, Store } from "@subsquid/typeorm-store";
 import { processor, ProcessorContext } from "./processor";
-import { InboundMessage, OutboundMessage } from "./model";
+import { InboundMessage, OutboundMessage } from "../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
 import assert from "assert";
@@ -13,8 +13,10 @@ export type Messages = {
 processor.run(new TypeormDatabase({ supportHotBlocks: true }), async (ctx) => {
   let messages: Messages = fetchBridgeEvents(ctx);
 
+  console.log("saving inbound messages")
   await ctx.store.save(messages.inboundMessages);
 
+  console.log("saving outbound messages")
   await ctx.store.save(messages.outboundMessages);
 
 });

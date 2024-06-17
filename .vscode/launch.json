@@ -10,12 +10,8 @@
       "name": "Launch process inbound",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["src/main.ts"],
-      "env": {
-        // "NODE_ENV": "rococo_sepolia",
-        // "REACT_APP_INFURA_KEY": "1989f3c5cbc549d9b5c37f64e948fa58",
-        // "SLACK_WEBHOOK_URL": "https://hooks.slack.com/services/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"
-      },
+      "args": ["src/bridgehub/main.ts"],
+      "env": {},
       "console": "internalConsole"
     }
   ]

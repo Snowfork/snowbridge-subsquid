@@ -40,14 +40,14 @@
       "description": "Generate TypeORM entities from the schema file",
       "cmd": ["squid-typeorm-codegen"]
     },
-    "typegen": {
+    "typegen-bridgehub": {
       "description": "Generate data access classes for an substrate metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen.json"]
+      "cmd": ["squid-substrate-typegen", "./typegen-bridgehub.json"]
     },
     "process": {
       "description": "Load .env and start the squid processor",
       "deps": ["build", "migration:apply"],
-      "cmd": ["node", "--require=dotenv/config", "lib/main.js"]
+      "cmd": ["node", "--require=dotenv/config", "lib/bridgehub/main.js"]
     },
     "process:prod": {
       "description": "Start the squid processor",
