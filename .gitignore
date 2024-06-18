@@ -8,3 +8,4 @@
 # IDE files
 /.idea
 data
+.env

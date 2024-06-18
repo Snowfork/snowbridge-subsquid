@@ -11,7 +11,7 @@
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
       "args": ["src/bridgehub/main.ts"],
-      "env": {},
+      "env": { "SQD_DEBUG": "*" },
       "console": "internalConsole"
     },
     {
@@ -20,6 +20,7 @@
       "name": "Launch process ethereum",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
+      "env": { "SQD_DEBUG": "*" },
       "args": ["src/ethereum/main.ts"]
     }
   ]

@@ -27,3 +27,13 @@ type TokenSent @entity {
   destinationAddress: String! @index
   amount: BigInt!
 }
+
+type OutboundMessageAccepted @entity {
+  id: ID!
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  messageId: String! @index
+  channelId: String @index
+  nonce: Int! @index
+}

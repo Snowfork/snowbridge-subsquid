@@ -38,7 +38,10 @@ export const processor = new EvmBatchProcessor()
   })
   .addLog({
     address: [GATEWAY_ADDRESS],
-    topic0: [gateway.events.TokenSent.topic],
+    topic0: [
+      gateway.events.TokenSent.topic,
+      gateway.events.OutboundMessageAccepted.topic,
+    ],
   });
 
 export type Fields = EvmBatchProcessorFields<typeof processor>;
