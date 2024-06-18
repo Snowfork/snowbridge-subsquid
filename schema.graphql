@@ -15,3 +15,15 @@ type OutboundMessage @entity {
   channelId: String @index
   nonce: Int! @index
 }
+
+type TokenSent @entity {
+  id: ID!
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  tokenAddress: String! @index
+  senderAddress: String! @index
+  destinationParaId: Int! @index
+  destinationAddress: String! @index
+  amount: BigInt!
+}

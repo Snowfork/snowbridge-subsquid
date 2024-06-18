@@ -40,11 +40,24 @@
       "description": "Generate TypeORM entities from the schema file",
       "cmd": ["squid-typeorm-codegen"]
     },
-    "typegen-bridgehub": {
+    "typegen:ethereum": {
+      "description": "Generate data access classes for an ABI file(s)",
+      "cmd": [
+        "squid-evm-typegen",
+        "./src/ethereum/abi",
+        { "glob": "./abi/*.json" }
+      ]
+    },
+    "process:ethereum": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build", "migration:apply"],
+      "cmd": ["node", "--require=dotenv/config", "lib/ethereum/main.js"]
+    },
+    "typegen:bridgehub": {
       "description": "Generate data access classes for an substrate metadata",
       "cmd": ["squid-substrate-typegen", "./typegen-bridgehub.json"]
     },
-    "process": {
+    "process:bridgehub": {
       "description": "Load .env and start the squid processor",
       "deps": ["build", "migration:apply"],
       "cmd": ["node", "--require=dotenv/config", "lib/bridgehub/main.js"]

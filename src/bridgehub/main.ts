@@ -10,16 +10,21 @@ export type Messages = {
   outboundMessages: OutboundMessage[];
 };
 
-processor.run(new TypeormDatabase({ supportHotBlocks: true }), async (ctx) => {
-  let messages: Messages = fetchBridgeEvents(ctx);
+processor.run(
+  new TypeormDatabase({
+    supportHotBlocks: true,
+    stateSchema: "bridgehub_processor",
+  }),
+  async (ctx) => {
+    let messages: Messages = fetchBridgeEvents(ctx);
 
-  console.log("saving inbound messages")
-  await ctx.store.save(messages.inboundMessages);
+    console.log("saving inbound messages");
+    await ctx.store.save(messages.inboundMessages);
 
-  console.log("saving outbound messages")
-  await ctx.store.save(messages.outboundMessages);
-
-});
+    console.log("saving outbound messages");
+    await ctx.store.save(messages.outboundMessages);
+  }
+);
 
 function fetchBridgeEvents(ctx: ProcessorContext<Store>): Messages {
   // Filters and decodes the arriving events
