@@ -1,12 +1,14 @@
 import { TypeormDatabase, Store } from "@subsquid/typeorm-store";
 import { processor, ProcessorContext } from "./processor";
-import { InboundMessage, OutboundMessage } from "../model";
+import { InboundMessage, OutboundMessage, TransferStatus } from "../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
+import { TransferStatusE2S } from "../common";
 
 export type Messages = {
   inboundMessages: InboundMessage[];
   outboundMessages: OutboundMessage[];
+  transfers: TransferStatus[];
 };
 
 processor.run(
@@ -15,7 +17,7 @@ processor.run(
     stateSchema: "bridgehub_processor",
   }),
   async (ctx) => {
-    let messages: Messages = fetchBridgeEvents(ctx);
+    let messages: Messages = await fetchBridgeEvents(ctx);
 
     if (messages.inboundMessages.length > 0) {
       ctx.log.debug("saving inbound messages");
@@ -26,13 +28,21 @@ processor.run(
       ctx.log.debug("saving outbound messages");
       await ctx.store.save(messages.outboundMessages);
     }
+
+    if (messages.transfers.length > 0) {
+      ctx.log.debug("updating transfer messages");
+      await ctx.store.save(messages.transfers);
+    }
   }
 );
 
-function fetchBridgeEvents(ctx: ProcessorContext<Store>): Messages {
+async function fetchBridgeEvents(
+  ctx: ProcessorContext<Store>
+): Promise<Messages> {
   // Filters and decodes the arriving events
   let inboundMessages: InboundMessage[] = [],
-    outboundMessages: OutboundMessage[] = [];
+    outboundMessages: OutboundMessage[] = [],
+    transfers: TransferStatus[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (event.name == events.ethereumInboundQueue.messageReceived.name) {
@@ -54,6 +64,13 @@ function fetchBridgeEvents(ctx: ProcessorContext<Store>): Messages {
             nonce: Number(rec.nonce),
           })
         );
+        let transfer = await ctx.store.findOneBy(TransferStatus, {
+          id: rec.messageId.toString(),
+        });
+        if (transfer!) {
+          transfer.status = TransferStatusE2S.InboundQueueReceived;
+          transfers.push(transfer);
+        }
       }
 
       if (event.name == events.ethereumOutboundQueue.messageAccepted.name) {
@@ -79,5 +96,5 @@ function fetchBridgeEvents(ctx: ProcessorContext<Store>): Messages {
       }
     }
   }
-  return { inboundMessages, outboundMessages };
+  return { inboundMessages, outboundMessages, transfers };
 }
