@@ -3,7 +3,6 @@ import { processor, ProcessorContext } from "./processor";
 import { InboundMessage, OutboundMessage } from "../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
-import assert from "assert";
 
 export type Messages = {
   inboundMessages: InboundMessage[];
@@ -18,11 +17,15 @@ processor.run(
   async (ctx) => {
     let messages: Messages = fetchBridgeEvents(ctx);
 
-    console.log("saving inbound messages");
-    await ctx.store.save(messages.inboundMessages);
+    if (messages.inboundMessages.length > 0) {
+      ctx.log.debug("saving inbound messages");
+      await ctx.store.save(messages.inboundMessages);
+    }
 
-    console.log("saving outbound messages");
-    await ctx.store.save(messages.outboundMessages);
+    if (messages.outboundMessages.length > 0) {
+      ctx.log.debug("saving outbound messages");
+      await ctx.store.save(messages.outboundMessages);
+    }
   }
 );
 

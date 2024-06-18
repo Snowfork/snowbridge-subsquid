@@ -45,3 +45,18 @@ type MessageProcessed @entity {
   messageId: String! @index
   success: Boolean! @index
 }
+
+type TransferStatus @entity {
+  id: ID!
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  tokenAddress: String! @index
+  senderAddress: String! @index
+  destinationParaId: Int! @index
+  destinationAddress: String! @index
+  amount: BigInt!
+  channelId: String @index
+  nonce: Int! @index
+  status: String! @index
+}

@@ -13,8 +13,10 @@ processor.run(
   async (ctx) => {
     let messages: MessageProcessed[] = fetchBridgeEvents(ctx);
 
-    console.log("saving xcmp messages");
-    await ctx.store.save(messages);
+    if (messages.length > 0) {
+      ctx.log.debug("saving sibling messages from bridge hub");
+      await ctx.store.save(messages);
+    }
   }
 );
 

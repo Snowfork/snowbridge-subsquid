@@ -1,5 +1,5 @@
-module.exports = class Data1718690373888 {
-    name = 'Data1718690373888'
+module.exports = class Data1718719813964 {
+    name = 'Data1718719813964'
 
     async up(db) {
         await db.query(`CREATE TABLE "inbound_message" ("id" character varying NOT NULL, "block_number" integer NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "message_id" text NOT NULL, "channel_id" text NOT NULL, "nonce" integer NOT NULL, CONSTRAINT "PK_a013d32c89ba79e84f4d371bd1b" PRIMARY KEY ("id"))`)
@@ -29,6 +29,22 @@ module.exports = class Data1718690373888 {
         await db.query(`CREATE INDEX "IDX_5be26c6bd490cf60e7b0b98c6d" ON "outbound_message_accepted" ("message_id") `)
         await db.query(`CREATE INDEX "IDX_e6c9120312cbb364176e39597b" ON "outbound_message_accepted" ("channel_id") `)
         await db.query(`CREATE INDEX "IDX_11e0cfb5adb640c0a3613d900f" ON "outbound_message_accepted" ("nonce") `)
+        await db.query(`CREATE TABLE "message_processed" ("id" character varying NOT NULL, "block_number" integer NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "message_id" text NOT NULL, "success" boolean NOT NULL, CONSTRAINT "PK_71cd050ff33bac4650ee834568c" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_a2917a627275f0b19fe7c1621d" ON "message_processed" ("block_number") `)
+        await db.query(`CREATE INDEX "IDX_aeef6ec5305b0ba859b8cdddcd" ON "message_processed" ("timestamp") `)
+        await db.query(`CREATE INDEX "IDX_84149a2084184edbc08d2900af" ON "message_processed" ("message_id") `)
+        await db.query(`CREATE INDEX "IDX_569086060c798b8fe6ceb9640b" ON "message_processed" ("success") `)
+        await db.query(`CREATE TABLE "transfer_status" ("id" character varying NOT NULL, "tx_hash" text NOT NULL, "block_number" integer NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "token_address" text NOT NULL, "sender_address" text NOT NULL, "destination_para_id" integer NOT NULL, "destination_address" text NOT NULL, "amount" numeric NOT NULL, "channel_id" text, "nonce" integer NOT NULL, "status" text NOT NULL, CONSTRAINT "PK_ca23a727576ad160b64ee13d756" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_cb1638573716da4e943c20cf81" ON "transfer_status" ("tx_hash") `)
+        await db.query(`CREATE INDEX "IDX_6a7cc6e63a6f48d447e8ec880a" ON "transfer_status" ("block_number") `)
+        await db.query(`CREATE INDEX "IDX_39fda0dc99cdf8fdc9d8fea7bd" ON "transfer_status" ("timestamp") `)
+        await db.query(`CREATE INDEX "IDX_0e7d937adc2cc24b14250b5ee3" ON "transfer_status" ("token_address") `)
+        await db.query(`CREATE INDEX "IDX_07feb468610f7b274e3c83ace6" ON "transfer_status" ("sender_address") `)
+        await db.query(`CREATE INDEX "IDX_4ab544bdf381ca031a13368b87" ON "transfer_status" ("destination_para_id") `)
+        await db.query(`CREATE INDEX "IDX_7ba7f2c7436fc4d742f2190c18" ON "transfer_status" ("destination_address") `)
+        await db.query(`CREATE INDEX "IDX_d921853dbb80f9f495395dfe53" ON "transfer_status" ("channel_id") `)
+        await db.query(`CREATE INDEX "IDX_d0ae72a28bdfb474993e9f3513" ON "transfer_status" ("nonce") `)
+        await db.query(`CREATE INDEX "IDX_bc3aea970310df0f1dffe32ca3" ON "transfer_status" ("status") `)
     }
 
     async down(db) {
@@ -59,5 +75,21 @@ module.exports = class Data1718690373888 {
         await db.query(`DROP INDEX "public"."IDX_5be26c6bd490cf60e7b0b98c6d"`)
         await db.query(`DROP INDEX "public"."IDX_e6c9120312cbb364176e39597b"`)
         await db.query(`DROP INDEX "public"."IDX_11e0cfb5adb640c0a3613d900f"`)
+        await db.query(`DROP TABLE "message_processed"`)
+        await db.query(`DROP INDEX "public"."IDX_a2917a627275f0b19fe7c1621d"`)
+        await db.query(`DROP INDEX "public"."IDX_aeef6ec5305b0ba859b8cdddcd"`)
+        await db.query(`DROP INDEX "public"."IDX_84149a2084184edbc08d2900af"`)
+        await db.query(`DROP INDEX "public"."IDX_569086060c798b8fe6ceb9640b"`)
+        await db.query(`DROP TABLE "transfer_status"`)
+        await db.query(`DROP INDEX "public"."IDX_cb1638573716da4e943c20cf81"`)
+        await db.query(`DROP INDEX "public"."IDX_6a7cc6e63a6f48d447e8ec880a"`)
+        await db.query(`DROP INDEX "public"."IDX_39fda0dc99cdf8fdc9d8fea7bd"`)
+        await db.query(`DROP INDEX "public"."IDX_0e7d937adc2cc24b14250b5ee3"`)
+        await db.query(`DROP INDEX "public"."IDX_07feb468610f7b274e3c83ace6"`)
+        await db.query(`DROP INDEX "public"."IDX_4ab544bdf381ca031a13368b87"`)
+        await db.query(`DROP INDEX "public"."IDX_7ba7f2c7436fc4d742f2190c18"`)
+        await db.query(`DROP INDEX "public"."IDX_d921853dbb80f9f495395dfe53"`)
+        await db.query(`DROP INDEX "public"."IDX_d0ae72a28bdfb474993e9f3513"`)
+        await db.query(`DROP INDEX "public"."IDX_bc3aea970310df0f1dffe32ca3"`)
     }
 }
