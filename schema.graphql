@@ -37,3 +37,11 @@ type OutboundMessageAccepted @entity {
   channelId: String @index
   nonce: Int! @index
 }
+
+type MessageProcessed @entity {
+  id: ID!
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  messageId: String! @index
+  success: Boolean! @index
+}

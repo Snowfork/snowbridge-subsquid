@@ -22,6 +22,15 @@
       "cwd": "${workspaceRoot}",
       "env": { "SQD_DEBUG": "*" },
       "args": ["src/ethereum/main.ts"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch process assethub",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["src/assethub/main.ts"],
+      "env": { "SQD_DEBUG": "*" }
     }
   ]
 }
