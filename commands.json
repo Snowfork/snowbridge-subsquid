@@ -53,6 +53,15 @@
       "deps": ["build", "migration:apply"],
       "cmd": ["node", "--require=dotenv/config", "lib/ethereum/main.js"]
     },
+    "generateMeta:bridgehub": {
+      "description": "Generate metadata for bridge hub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://bridge-hub-polkadot-rpc.dwellir.com",
+        "--out=bridgehub-versions.jsonl"
+      ]
+    },
     "typegen:bridgehub": {
       "description": "Generate data access classes for an substrate metadata",
       "cmd": ["squid-substrate-typegen", "./typegen-bridgehub.json"]
@@ -62,11 +71,18 @@
       "deps": ["build", "migration:apply"],
       "cmd": ["node", "--require=dotenv/config", "lib/bridgehub/main.js"]
     },
-    "process:prod": {
-      "description": "Start the squid processor",
-      "deps": ["migration:apply"],
-      "cmd": ["node", "lib/main.js"],
-      "hidden": true
+    "generateMeta:assethub": {
+      "description": "Generate metadata for asset hub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://asset-hub-polkadot-rpc.dwellir.com",
+        "--out=assethub-versions.jsonl"
+      ]
+    },
+    "typegen:assethub": {
+      "description": "Generate data access classes for an substrate metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-assethub.json"]
     },
     "serve": {
       "description": "Start the GraphQL API server",
@@ -104,15 +120,6 @@
     "open": {
       "description": "Open a local browser window",
       "cmd": ["npx", "--yes", "opener"]
-    },
-    "generateMetaForBridgeHub": {
-      "description": "Generate metadata for bridge hub",
-      "cmd": [
-        "npx",
-        "squid-substrate-metadata-explorer",
-        "--rpc=wss://bridge-hub-polkadot-rpc.dwellir.com",
-        "--out=bridgehub-versions.jsonl"
-      ]
     },
     "prettier": {
       "cmd": ["npx", "prettier", ".", "--write"]

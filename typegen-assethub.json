@@ -1,0 +1,18 @@
+{
+  "outDir": "src/assethub/types",
+  "specVersions": "assethub-versions.jsonl",
+  "pallets": {
+    "MessageQueue": {
+      "events": ["Processed", "ProcessingFailed"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "ForeignAssets": {
+      "events": ["Created", "Issued", "Burned"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    }
+  }
+}
