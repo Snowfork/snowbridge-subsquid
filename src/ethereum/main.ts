@@ -46,7 +46,7 @@ processor.run(
             txHash: log.transactionHash,
             timestamp: new Date(c.header.timestamp),
             channelId: channelID,
-            messageId: messageID,
+            messageId: messageID.toString().toLowerCase(),
             nonce: Number(nonce),
           });
           outboundMessages.push(outboundMessageAccepted);

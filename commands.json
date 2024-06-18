@@ -18,6 +18,10 @@
       "description": "Drop a PG database",
       "cmd": ["docker", "compose", "down"]
     },
+    "codegen": {
+      "description": "Generate TypeORM entities from the schema file",
+      "cmd": ["squid-typeorm-codegen"]
+    },
     "migration:apply": {
       "description": "Apply the DB migrations",
       "cmd": ["squid-typeorm-migration", "apply"]
@@ -35,10 +39,6 @@
       "deps": ["build"],
       "cmd": ["squid-typeorm-migration", "generate"],
       "hidden": true
-    },
-    "codegen": {
-      "description": "Generate TypeORM entities from the schema file",
-      "cmd": ["squid-typeorm-codegen"]
     },
     "typegen:ethereum": {
       "description": "Generate data access classes for an ABI file(s)",
@@ -83,6 +83,15 @@
     "typegen:assethub": {
       "description": "Generate data access classes for an substrate metadata",
       "cmd": ["squid-substrate-typegen", "./typegen-assethub.json"]
+    },
+    "process:assethub": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build", "migration:apply"],
+      "cmd": ["node", "--require=dotenv/config", "lib/assethub/main.js"]
+    },
+    "postprocess": {
+      "description": "Update status based on stored data",
+      "cmd": ["node", "--require=dotenv/config", "lib/postprocess/index.js"]
     },
     "serve": {
       "description": "Start the GraphQL API server",

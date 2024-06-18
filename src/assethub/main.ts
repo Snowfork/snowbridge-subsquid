@@ -52,17 +52,16 @@ async function fetchBridgeEvents(
         }
         // Filter message from BH
         if (rec.origin.__kind == "Sibling" && rec.origin.value == 1002) {
-          processed.push(
-            new MessageProcessed({
-              id: rec.id,
-              blockNumber: block.header.height,
-              timestamp: new Date(block.header.timestamp!),
-              messageId: rec.id.toString(),
-              success: rec.success,
-            })
-          );
+          let message = new MessageProcessed({
+            id: event.id,
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: rec.id.toString().toLowerCase(),
+            success: rec.success,
+          });
+          processed.push(message);
           let transfer = await ctx.store.findOneBy(TransferStatus, {
-            id: rec.id.toString(),
+            id: message.messageId,
           });
           if (transfer!) {
             if (rec.success) {

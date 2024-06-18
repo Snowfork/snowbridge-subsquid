@@ -53,19 +53,18 @@ async function fetchBridgeEvents(
         } else {
           throw new Error("Unsupported spec");
         }
+        let message = new InboundMessage({
+          id: event.id,
+          blockNumber: block.header.height,
+          timestamp: new Date(block.header.timestamp!),
+          messageId: rec.messageId.toString().toLowerCase(),
+          channelId: rec.channelId.toString(),
+          nonce: Number(rec.nonce),
+        });
 
-        inboundMessages.push(
-          new InboundMessage({
-            id: event.id,
-            blockNumber: block.header.height,
-            timestamp: new Date(block.header.timestamp!),
-            messageId: rec.messageId.toString(),
-            channelId: rec.channelId.toString(),
-            nonce: Number(rec.nonce),
-          })
-        );
+        inboundMessages.push(message);
         let transfer = await ctx.store.findOneBy(TransferStatus, {
-          id: rec.messageId.toString(),
+          id: message.messageId,
         });
         if (transfer!) {
           transfer.status = TransferStatusE2S.InboundQueueReceived;
@@ -87,7 +86,7 @@ async function fetchBridgeEvents(
             id: event.id,
             blockNumber: block.header.height,
             timestamp: new Date(block.header.timestamp!),
-            messageId: rec.id.toString(),
+            messageId: rec.id.toString().toLowerCase(),
             // Wait for https://github.com/Snowfork/polkadot-sdk/pull/147
             // channelId: rec.channelId.toString(),
             nonce: Number(rec.nonce),

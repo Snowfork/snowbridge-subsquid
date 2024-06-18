@@ -31,6 +31,15 @@
       "cwd": "${workspaceRoot}",
       "args": ["src/assethub/main.ts"],
       "env": { "SQD_DEBUG": "*" }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "post process status",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["src/postprocessor/index.ts"],
+      "env": { "SQD_DEBUG": "*" }
     }
   ]
 }
