@@ -13,6 +13,16 @@
       "calls": [],
       "storage": [],
       "constants": []
+    },
+    "PolkadotXcm": {
+      "events": ["Sent"],
+      "calls": [
+        "transfer_assets",
+        "reserve_transfer_assets",
+        "limited_reserve_transfer_assets"
+      ],
+      "storage": [],
+      "constants": []
     }
   }
 }
