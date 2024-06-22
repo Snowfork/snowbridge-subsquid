@@ -5,3 +5,7 @@ export enum TransferStatusEnum {
   Processed = "Processed",
   ProcessFailed = "ProcessFailed",
 }
+
+export const BridgeHubParaId = 1002;
+
+export const AssetHubParaId = 1000;

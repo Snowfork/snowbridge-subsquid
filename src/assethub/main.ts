@@ -14,7 +14,7 @@ import {
   V4Location,
   ProcessMessageError,
 } from "./types/v1002000";
-import { TransferStatusEnum } from "../common";
+import { TransferStatusEnum, BridgeHubParaId, AssetHubParaId } from "../common";
 
 processor.run(
   new TypeormDatabase({
@@ -27,7 +27,6 @@ processor.run(
 );
 
 async function processBridgeEvents(ctx: ProcessorContext<Store>) {
-  // Filters and decodes the arriving events
   let processedMessages: MessageProcessedOnPolkadot[] = [],
     transfersFromEthereum: TransferStatusToPolkadot[] = [],
     tokenSentMessages: TokenSentOnPolkadot[] = [],
@@ -52,7 +51,10 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
           throw new Error("Unsupported spec");
         }
         // Filter message from BH
-        if (rec.origin.__kind == "Sibling" && rec.origin.value == 1002) {
+        if (
+          rec.origin.__kind == "Sibling" &&
+          rec.origin.value == BridgeHubParaId
+        ) {
           let message = new MessageProcessedOnPolkadot({
             id: event.id,
             blockNumber: block.header.height,
@@ -95,7 +97,8 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
           let senderAddress: Bytes;
           let tokenAddress: Bytes;
           let destinationAddress: Bytes;
-          let messageId: Bytes = rec.messageId;
+
+          let messageId = rec.messageId.toString().toLowerCase();
 
           let instruction0 = rec.message[0];
           if (rec.origin.interior.__kind == "X1") {
@@ -135,7 +138,7 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
             timestamp: new Date(block.header.timestamp!),
             messageId: messageId,
             tokenAddress: tokenAddress!,
-            sourceParaId: 1000,
+            sourceParaId: AssetHubParaId,
             senderAddress: senderAddress!,
             destinationAddress: destinationAddress!,
             amount: amount!,
@@ -149,7 +152,7 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
             timestamp: new Date(block.header.timestamp!),
             messageId: messageId,
             tokenAddress: tokenAddress!,
-            sourceParaId: 1000,
+            sourceParaId: AssetHubParaId,
             senderAddress: senderAddress!,
             destinationAddress: destinationAddress!,
             amount: amount!,

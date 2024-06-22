@@ -75,6 +75,17 @@ type OutboundMessageAcceptedOnBridgeHub @entity {
   nonce: Int! @index
 }
 
+type InboundMessageDispatchedOnEthereum @entity {
+  id: ID!
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  messageId: String! @index
+  channelId: String @index
+  nonce: Int! @index
+  success: Boolean! @index
+}
+
 type TransferStatusToEthereum @entity {
   id: ID!
   messageId: String! @index

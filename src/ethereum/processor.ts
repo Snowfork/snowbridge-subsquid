@@ -41,6 +41,7 @@ export const processor = new EvmBatchProcessor()
     topic0: [
       gateway.events.TokenSent.topic,
       gateway.events.OutboundMessageAccepted.topic,
+      gateway.events.InboundMessageDispatched.topic,
     ],
   });
 
