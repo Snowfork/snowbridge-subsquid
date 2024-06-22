@@ -89,9 +89,23 @@
       "deps": ["build", "migration:apply"],
       "cmd": ["node", "--require=dotenv/config", "lib/assethub/main.js"]
     },
-    "postprocess": {
+    "postprocess:toPolkadot": {
       "description": "Update status based on stored data",
-      "cmd": ["node", "--require=dotenv/config", "lib/postprocess/index.js"]
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/postprocess/index.js",
+        "toPolkadot"
+      ]
+    },
+    "postprocess:toEthereum": {
+      "description": "Update status based on stored data",
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/postprocess/index.js",
+        "toEthereum"
+      ]
     },
     "serve": {
       "description": "Start the GraphQL API server",

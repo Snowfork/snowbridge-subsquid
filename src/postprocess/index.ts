@@ -4,13 +4,22 @@ import * as dotenv from "dotenv";
 import { DataSource } from "typeorm";
 import {
   TransferStatusToPolkadot,
+  TransferStatusToEthereum,
   InboundMessageReceivedOnBridgeHub,
+  OutboundMessageAcceptedOnBridgeHub,
   MessageProcessedOnPolkadot,
+  InboundMessageDispatchedOnEthereum,
 } from "../model";
 import { TransferStatusEnum } from "../common";
 
-export const post_process = async () => {
+export const postProcess = async () => {
   dotenv.config();
+
+  let direction: string;
+
+  if (process.argv.length == 3) {
+    direction = process.argv[2];
+  }
 
   await registerTsNodeIfRequired();
 
@@ -26,14 +35,39 @@ export const post_process = async () => {
   await connection.initialize();
 
   try {
-    let updated: TransferStatusToPolkadot[] = [];
-    let transfers = await connection.manager.find(TransferStatusToPolkadot, {
-      where: [
-        { status: TransferStatusEnum.Sent },
-        { status: TransferStatusEnum.InboundQueueReceived },
-      ],
-    });
-    for (let transfer of transfers) {
+    if (direction! == "toPolkadot") {
+      await processToPolkadot(connection);
+    } else if (direction! == "toEthereum") {
+      await processToEthereum(connection);
+    }
+  } finally {
+    await connection.destroy().catch(() => null);
+  }
+};
+
+const processToPolkadot = async (connection: DataSource) => {
+  let updated: TransferStatusToPolkadot[] = [];
+  let transfers = await connection.manager.find(TransferStatusToPolkadot, {
+    where: [
+      { status: TransferStatusEnum.Sent },
+      { status: TransferStatusEnum.InboundQueueReceived },
+    ],
+  });
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      MessageProcessedOnPolkadot,
+      {
+        messageId: transfer.id,
+      }
+    );
+    if (processedMessage!) {
+      if (processedMessage.success) {
+        transfer.status = TransferStatusEnum.Processed;
+      } else {
+        transfer.status = TransferStatusEnum.ProcessFailed;
+      }
+      updated.push(transfer);
+    } else {
       let inboundMessage = await connection.manager.findOneBy(
         InboundMessageReceivedOnBridgeHub,
         {
@@ -44,29 +78,52 @@ export const post_process = async () => {
         transfer.status = TransferStatusEnum.InboundQueueReceived;
         updated.push(transfer);
       }
-      let processedMessage = await connection.manager.findOneBy(
-        MessageProcessedOnPolkadot,
+    }
+  }
+  await connection.manager.save(updated);
+  console.log("To polkadot transfer status updated");
+};
+
+const processToEthereum = async (connection: DataSource) => {
+  let updated: TransferStatusToEthereum[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+    where: [
+      { status: TransferStatusEnum.Sent },
+      { status: TransferStatusEnum.OutboundQueueReceived },
+    ],
+  });
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      InboundMessageDispatchedOnEthereum,
+      {
+        messageId: transfer.id,
+      }
+    );
+    if (processedMessage!) {
+      if (processedMessage.success) {
+        transfer.status = TransferStatusEnum.Processed;
+      } else {
+        transfer.status = TransferStatusEnum.ProcessFailed;
+      }
+      updated.push(transfer);
+    } else {
+      let outboundMessage = await connection.manager.findOneBy(
+        OutboundMessageAcceptedOnBridgeHub,
         {
           messageId: transfer.id,
         }
       );
-      if (processedMessage!) {
-        if (processedMessage.success) {
-          transfer.status = TransferStatusEnum.Processed;
-        } else {
-          transfer.status = TransferStatusEnum.ProcessFailed;
-        }
+      if (outboundMessage!) {
+        transfer.status = TransferStatusEnum.OutboundQueueReceived;
         updated.push(transfer);
       }
     }
-    await connection.manager.save(updated);
-    console.log("updated");
-  } finally {
-    await connection.destroy().catch(() => null);
   }
+  await connection.manager.save(updated);
+  console.log("To ethereum transfer status updated");
 };
 
-post_process()
+postProcess()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error("Error:", error);

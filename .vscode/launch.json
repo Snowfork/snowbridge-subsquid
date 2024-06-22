@@ -38,7 +38,8 @@
       "name": "post process status",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["src/postprocessor/index.ts"],
+      // "args": ["src/postprocess/index.ts", "toPolkadot"],
+      "args": ["src/postprocess/index.ts", "toEthereum"],
       "env": { "SQD_DEBUG": "*" }
     }
   ]
