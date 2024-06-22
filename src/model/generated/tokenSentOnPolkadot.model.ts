@@ -1,13 +1,17 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_} from "@subsquid/typeorm-store"
 
 @Entity_()
-export class TokenSent {
-    constructor(props?: Partial<TokenSent>) {
+export class TokenSentOnPolkadot {
+    constructor(props?: Partial<TokenSentOnPolkadot>) {
         Object.assign(this, props)
     }
 
     @PrimaryColumn_()
     id!: string
+
+    @Index_()
+    @StringColumn_({nullable: false})
+    messageId!: string
 
     @Index_()
     @StringColumn_({nullable: false})
@@ -31,7 +35,7 @@ export class TokenSent {
 
     @Index_()
     @IntColumn_({nullable: false})
-    destinationParaId!: number
+    sourceParaId!: number
 
     @Index_()
     @StringColumn_({nullable: false})

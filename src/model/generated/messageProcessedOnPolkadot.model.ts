@@ -1,8 +1,8 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, IntColumn as IntColumn_, Index as Index_, DateTimeColumn as DateTimeColumn_, StringColumn as StringColumn_, BooleanColumn as BooleanColumn_} from "@subsquid/typeorm-store"
 
 @Entity_()
-export class MessageProcessed {
-    constructor(props?: Partial<MessageProcessed>) {
+export class MessageProcessedOnPolkadot {
+    constructor(props?: Partial<MessageProcessedOnPolkadot>) {
         Object.assign(this, props)
     }
 

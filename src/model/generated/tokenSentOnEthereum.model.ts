@@ -1,8 +1,8 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_} from "@subsquid/typeorm-store"
 
 @Entity_()
-export class TransferStatus {
-    constructor(props?: Partial<TransferStatus>) {
+export class TokenSentOnEthereum {
+    constructor(props?: Partial<TokenSentOnEthereum>) {
         Object.assign(this, props)
     }
 
@@ -39,16 +39,4 @@ export class TransferStatus {
 
     @BigIntColumn_({nullable: false})
     amount!: bigint
-
-    @Index_()
-    @StringColumn_({nullable: true})
-    channelId!: string | undefined | null
-
-    @Index_()
-    @IntColumn_({nullable: false})
-    nonce!: number
-
-    @Index_()
-    @StringColumn_({nullable: false})
-    status!: string
 }

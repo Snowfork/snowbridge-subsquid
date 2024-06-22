@@ -2,8 +2,12 @@ import { createOrmConfig } from "@subsquid/typeorm-config";
 import { registerTsNodeIfRequired } from "@subsquid/util-internal-ts-node";
 import * as dotenv from "dotenv";
 import { DataSource } from "typeorm";
-import { TransferStatus, InboundMessage, MessageProcessed } from "../model";
-import { TransferStatusE2S } from "../common";
+import {
+  TransferStatusToPolkadot,
+  InboundMessageReceivedOnBridgeHub,
+  MessageProcessedOnPolkadot,
+} from "../model";
+import { TransferStatusEnum } from "../common";
 
 export const post_process = async () => {
   dotenv.config();
@@ -22,32 +26,35 @@ export const post_process = async () => {
   await connection.initialize();
 
   try {
-    let updated: TransferStatus[] = [];
-    let transfers = await connection.manager.find(TransferStatus, {
+    let updated: TransferStatusToPolkadot[] = [];
+    let transfers = await connection.manager.find(TransferStatusToPolkadot, {
       where: [
-        { status: TransferStatusE2S.Sent },
-        { status: TransferStatusE2S.InboundQueueReceived },
+        { status: TransferStatusEnum.Sent },
+        { status: TransferStatusEnum.InboundQueueReceived },
       ],
     });
     for (let transfer of transfers) {
-      let inboundMessage = await connection.manager.findOneBy(InboundMessage, {
-        messageId: transfer.id,
-      });
+      let inboundMessage = await connection.manager.findOneBy(
+        InboundMessageReceivedOnBridgeHub,
+        {
+          messageId: transfer.id,
+        }
+      );
       if (inboundMessage!) {
-        transfer.status = TransferStatusE2S.InboundQueueReceived;
+        transfer.status = TransferStatusEnum.InboundQueueReceived;
         updated.push(transfer);
       }
       let processedMessage = await connection.manager.findOneBy(
-        MessageProcessed,
+        MessageProcessedOnPolkadot,
         {
           messageId: transfer.id,
         }
       );
       if (processedMessage!) {
         if (processedMessage.success) {
-          transfer.status = TransferStatusE2S.Processed;
+          transfer.status = TransferStatusEnum.Processed;
         } else {
-          transfer.status = TransferStatusE2S.ProcessFailed;
+          transfer.status = TransferStatusEnum.ProcessFailed;
         }
         updated.push(transfer);
       }

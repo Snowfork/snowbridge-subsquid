@@ -1,15 +1,13 @@
 import { TypeormDatabase, Store } from "@subsquid/typeorm-store";
 import { processor, ProcessorContext } from "./processor";
-import { InboundMessage, OutboundMessage, TransferStatus } from "../model";
+import {
+  InboundMessageReceivedOnBridgeHub,
+  OutboundMessageAcceptedOnBridgeHub,
+  TransferStatusToPolkadot,
+} from "../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
-import { TransferStatusE2S } from "../common";
-
-export type Messages = {
-  inboundMessages: InboundMessage[];
-  outboundMessages: OutboundMessage[];
-  transfers: TransferStatus[];
-};
+import { TransferStatusEnum } from "../common";
 
 processor.run(
   new TypeormDatabase({
@@ -17,32 +15,14 @@ processor.run(
     stateSchema: "bridgehub_processor",
   }),
   async (ctx) => {
-    let messages: Messages = await fetchBridgeEvents(ctx);
-
-    if (messages.inboundMessages.length > 0) {
-      ctx.log.debug("saving inbound messages");
-      await ctx.store.save(messages.inboundMessages);
-    }
-
-    if (messages.outboundMessages.length > 0) {
-      ctx.log.debug("saving outbound messages");
-      await ctx.store.save(messages.outboundMessages);
-    }
-
-    if (messages.transfers.length > 0) {
-      ctx.log.debug("updating transfer messages");
-      await ctx.store.save(messages.transfers);
-    }
+    await processBridgeEvents(ctx);
   }
 );
 
-async function fetchBridgeEvents(
-  ctx: ProcessorContext<Store>
-): Promise<Messages> {
-  // Filters and decodes the arriving events
-  let inboundMessages: InboundMessage[] = [],
-    outboundMessages: OutboundMessage[] = [],
-    transfers: TransferStatus[] = [];
+async function processBridgeEvents(ctx: ProcessorContext<Store>) {
+  let inboundMessages: InboundMessageReceivedOnBridgeHub[] = [],
+    outboundMessages: OutboundMessageAcceptedOnBridgeHub[] = [],
+    transfersToPolkadot: TransferStatusToPolkadot[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (event.name == events.ethereumInboundQueue.messageReceived.name) {
@@ -53,7 +33,7 @@ async function fetchBridgeEvents(
         } else {
           throw new Error("Unsupported spec");
         }
-        let message = new InboundMessage({
+        let message = new InboundMessageReceivedOnBridgeHub({
           id: event.id,
           blockNumber: block.header.height,
           timestamp: new Date(block.header.timestamp!),
@@ -63,12 +43,12 @@ async function fetchBridgeEvents(
         });
 
         inboundMessages.push(message);
-        let transfer = await ctx.store.findOneBy(TransferStatus, {
+        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
           id: message.messageId,
         });
         if (transfer!) {
-          transfer.status = TransferStatusE2S.InboundQueueReceived;
-          transfers.push(transfer);
+          transfer.status = TransferStatusEnum.InboundQueueReceived;
+          transfersToPolkadot.push(transfer);
         }
       }
 
@@ -82,7 +62,7 @@ async function fetchBridgeEvents(
         }
 
         outboundMessages.push(
-          new OutboundMessage({
+          new OutboundMessageAcceptedOnBridgeHub({
             id: event.id,
             blockNumber: block.header.height,
             timestamp: new Date(block.header.timestamp!),
@@ -95,5 +75,18 @@ async function fetchBridgeEvents(
       }
     }
   }
-  return { inboundMessages, outboundMessages, transfers };
+  if (inboundMessages.length > 0) {
+    ctx.log.debug("saving inbound messages");
+    await ctx.store.save(inboundMessages);
+  }
+
+  if (outboundMessages.length > 0) {
+    ctx.log.debug("saving outbound messages");
+    await ctx.store.save(outboundMessages);
+  }
+
+  if (transfersToPolkadot.length > 0) {
+    ctx.log.debug("updating transfer messages");
+    await ctx.store.save(transfersToPolkadot);
+  }
 }

@@ -1,18 +1,22 @@
 import { TypeormDatabase } from "@subsquid/typeorm-store";
-import { OutboundMessageAccepted, TokenSent, TransferStatus } from "../model";
+import {
+  OutboundMessageAcceptedOnEthereum,
+  TokenSentOnEthereum,
+  TransferStatusToPolkadot,
+} from "../model";
 import * as gateway from "./abi/Gateway";
 import { processor, GATEWAY_ADDRESS } from "./processor";
-import { TransferStatusE2S } from "../common";
+import { TransferStatusEnum } from "../common";
 
 processor.run(
   new TypeormDatabase({ supportHotBlocks: true, stateSchema: "eth_processor" }),
   async (ctx) => {
-    const tokenSents: TokenSent[] = [];
-    const outboundMessages: OutboundMessageAccepted[] = [];
-    const transferStatuses: TransferStatus[] = [];
+    const tokenSents: TokenSentOnEthereum[] = [];
+    const outboundMessages: OutboundMessageAcceptedOnEthereum[] = [];
+    const transferStatuses: TransferStatusToPolkadot[] = [];
     for (let c of ctx.blocks) {
-      let tokenSent: TokenSent;
-      let outboundMessageAccepted: OutboundMessageAccepted;
+      let tokenSent: TokenSentOnEthereum;
+      let outboundMessageAccepted: OutboundMessageAcceptedOnEthereum;
       for (let log of c.logs) {
         if (
           log.address !== GATEWAY_ADDRESS ||
@@ -23,7 +27,7 @@ processor.run(
         if (log.topics[0] == gateway.events.TokenSent.topic) {
           let { token, sender, destinationChain, destinationAddress, amount } =
             gateway.events.TokenSent.decode(log);
-          tokenSent = new TokenSent({
+          tokenSent = new TokenSentOnEthereum({
             id: log.id,
             blockNumber: c.header.height,
             txHash: log.transactionHash,
@@ -40,7 +44,7 @@ processor.run(
         ) {
           let { channelID, messageID, nonce } =
             gateway.events.OutboundMessageAccepted.decode(log);
-          outboundMessageAccepted = new OutboundMessageAccepted({
+          outboundMessageAccepted = new OutboundMessageAcceptedOnEthereum({
             id: log.id,
             blockNumber: c.header.height,
             txHash: log.transactionHash,
@@ -58,8 +62,9 @@ processor.run(
         tokenSent.txHash == outboundMessageAccepted.txHash
       ) {
         transferStatuses.push(
-          new TransferStatus({
+          new TransferStatusToPolkadot({
             id: outboundMessageAccepted.messageId,
+            messageId: outboundMessageAccepted.messageId,
             txHash: outboundMessageAccepted.txHash,
             blockNumber: c.header.height,
             timestamp: new Date(c.header.timestamp),
@@ -70,7 +75,7 @@ processor.run(
             destinationParaId: tokenSent.destinationParaId,
             destinationAddress: tokenSent.destinationAddress,
             amount: tokenSent.amount,
-            status: TransferStatusE2S.Sent,
+            status: TransferStatusEnum.Sent,
           })
         );
       }

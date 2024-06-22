@@ -1,4 +1,26 @@
-type InboundMessage @entity {
+type TokenSentOnEthereum @entity {
+  id: ID!
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  tokenAddress: String! @index
+  senderAddress: String! @index
+  destinationParaId: Int! @index
+  destinationAddress: String! @index
+  amount: BigInt!
+}
+
+type OutboundMessageAcceptedOnEthereum @entity {
+  id: ID!
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  messageId: String! @index
+  channelId: String @index
+  nonce: Int! @index
+}
+
+type InboundMessageReceivedOnBridgeHub @entity {
   id: ID!
   blockNumber: Int! @index
   timestamp: DateTime! @index
@@ -7,38 +29,7 @@ type InboundMessage @entity {
   nonce: Int! @index
 }
 
-type OutboundMessage @entity {
-  id: ID!
-  blockNumber: Int! @index
-  timestamp: DateTime! @index
-  messageId: String! @index
-  channelId: String @index
-  nonce: Int! @index
-}
-
-type TokenSent @entity {
-  id: ID!
-  txHash: String! @index
-  blockNumber: Int! @index
-  timestamp: DateTime! @index
-  tokenAddress: String! @index
-  senderAddress: String! @index
-  destinationParaId: Int! @index
-  destinationAddress: String! @index
-  amount: BigInt!
-}
-
-type OutboundMessageAccepted @entity {
-  id: ID!
-  txHash: String! @index
-  blockNumber: Int! @index
-  timestamp: DateTime! @index
-  messageId: String! @index
-  channelId: String @index
-  nonce: Int! @index
-}
-
-type MessageProcessed @entity {
+type MessageProcessedOnPolkadot @entity {
   id: ID!
   blockNumber: Int! @index
   timestamp: DateTime! @index
@@ -46,8 +37,9 @@ type MessageProcessed @entity {
   success: Boolean! @index
 }
 
-type TransferStatus @entity {
+type TransferStatusToPolkadot @entity {
   id: ID!
+  messageId: String! @index
   txHash: String! @index
   blockNumber: Int! @index
   timestamp: DateTime! @index
@@ -58,5 +50,43 @@ type TransferStatus @entity {
   amount: BigInt!
   channelId: String @index
   nonce: Int! @index
+  status: String! @index
+}
+
+type TokenSentOnPolkadot @entity {
+  id: ID!
+  messageId: String! @index
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  tokenAddress: String! @index
+  senderAddress: String! @index
+  sourceParaId: Int! @index
+  destinationAddress: String! @index
+  amount: BigInt!
+}
+
+type OutboundMessageAcceptedOnBridgeHub @entity {
+  id: ID!
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  messageId: String! @index
+  channelId: String @index
+  nonce: Int! @index
+}
+
+type TransferStatusToEthereum @entity {
+  id: ID!
+  messageId: String! @index
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  tokenAddress: String! @index
+  senderAddress: String! @index
+  sourceParaId: Int! @index
+  destinationAddress: String! @index
+  amount: BigInt!
+  channelId: String @index
+  nonce: Int @index
   status: String! @index
 }

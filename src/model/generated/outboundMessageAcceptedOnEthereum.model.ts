@@ -1,8 +1,8 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_} from "@subsquid/typeorm-store"
 
 @Entity_()
-export class OutboundMessageAccepted {
-    constructor(props?: Partial<OutboundMessageAccepted>) {
+export class OutboundMessageAcceptedOnEthereum {
+    constructor(props?: Partial<OutboundMessageAcceptedOnEthereum>) {
         Object.assign(this, props)
     }
 
