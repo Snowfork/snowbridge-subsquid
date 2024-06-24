@@ -1,6 +1,6 @@
 # Squid Snowbridge project
 
-A [Squid](https://subsquid.io) project to index snowbridge transfers. It accumulates transfers from multiple chains(Ethereum,Bridgehub,Assethub) and serves them via GraphQL API.
+A [Squid](https://subsquid.io) project to index snowbridge transfers. It accumulates transfer events from multiple chains(i.e. Ethereum, Bridgehub, Assethub) and serves them via GraphQL API.
 
 ## Summary
 
@@ -14,7 +14,7 @@ A [Squid](https://subsquid.io) project to index snowbridge transfers. It accumul
 
 ## Prerequisites
 
-- node 18.x
+- node 20.x
 - docker
 - npm -- note that `yarn` package manager is not supported
 
@@ -27,23 +27,29 @@ Please [install](https://docs.subsquid.io/squid-cli/installation/) it before pro
 # 1. Install dependencies
 npm ci
 
-# 2. Start target Postgres database and detach
+# 2. Copy the env and make change if necessary
+cp .env.example .env
+
+# 3. Start target Postgres database and detach
 sqd up
 
-# 3. Build the project
+# 4. Build the project
 sqd build
 
-# 4. Generate database migration
+# 5. Generate database migration
 sqd migration:clean && sqd migration && sqd migration:apply
 
-# 5. Start the squid processor for ethereum
+# 6. Start the squid processor for ethereum
 sqd process:ethereum
 
-# 6. Start the squid processor for bridgehub
+# 7. Start the squid processor for bridgehub
 sqd process:bridgehub
 
-# 6. Start the squid processor for assethub
+# 8. Start the squid processor for assethub
 sqd process:assethub
+
+# 9. Start the graphql api
+sqd serve
 ```
 
 A GraphiQL playground will be available at [localhost:4350/graphql](http://localhost:4350/graphql).
@@ -104,7 +110,7 @@ While it is possible to work with raw untyped json data,
 it's extremely error-prone and the json structure may change over time due to runtime upgrades.
 
 Squid framework provides a tool for generating type-safe wrappers around events, calls and runtime storage items for
-each historical change in the spec version. See the [Substrate typegen](https://docs.subsquid.io/substrate-indexing/squid-substrate-typegen/) documentation page.
+each historical change in the spec version. See the [typegen](https://docs.subsquid.io/sdk/resources/tools/typegen/generation/) page for different chains.
 
 ## Project conventions
 
@@ -120,6 +126,10 @@ Squid tools assume a certain project layout.
 See the [full desription](https://docs.subsquid.io/basics/squid-structure/) in the documentation.
 
 ## Graphql server extensions
+
+Basically transfer status should be resolved by these two queries.
+- transferStatusToPolkadots
+- transferStatusToEthereums
 
 It is possible to extend `squid-graphql-server(1)` with custom
 [type-graphql](https://typegraphql.com) resolvers and to add request validation.
