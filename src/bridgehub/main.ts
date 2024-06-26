@@ -49,8 +49,7 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
           id: message.messageId,
         });
         if (transfer!) {
-          transfer.channelId = transfer.status =
-            TransferStatusEnum.InboundQueueReceived;
+          transfer.status = TransferStatusEnum.InboundQueueReceived;
           transfersToPolkadot.push(transfer);
         }
       }
