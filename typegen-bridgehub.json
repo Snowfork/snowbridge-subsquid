@@ -1,0 +1,18 @@
+{
+  "outDir": "src/bridgehub/types",
+  "specVersions": "bridgehub-versions.jsonl",
+  "pallets": {
+    "EthereumInboundQueue": {
+      "events": ["MessageReceived"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "EthereumOutboundQueue": {
+      "events": ["MessageAccepted"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    }
+  }
+}

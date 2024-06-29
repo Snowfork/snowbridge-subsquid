@@ -1,0 +1,46 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch process bridgehub",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["src/bridgehub/main.ts"],
+      "env": { "SQD_DEBUG": "*" },
+      "console": "internalConsole"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch process ethereum",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "env": { "SQD_DEBUG": "*" },
+      "args": ["src/ethereum/main.ts"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch process assethub",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["src/assethub/main.ts"],
+      "env": { "SQD_DEBUG": "*" }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "post process status",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      // "args": ["src/postprocess/index.ts", "toPolkadot"],
+      "args": ["src/postprocess/index.ts", "toEthereum"],
+      "env": { "SQD_DEBUG": "*" }
+    }
+  ]
+}

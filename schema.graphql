@@ -1,17 +1,103 @@
-type Account @entity {
-  "Account address"
+type TokenSentOnEthereum @entity {
   id: ID!
-  transfersTo: [Transfer!] @derivedFrom(field: "to")
-  transfersFrom: [Transfer!] @derivedFrom(field: "from")
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  tokenAddress: String! @index
+  senderAddress: String! @index
+  destinationParaId: Int! @index
+  destinationAddress: String! @index
+  amount: BigInt!
 }
 
-type Transfer @entity {
+type OutboundMessageAcceptedOnEthereum @entity {
+  id: ID!
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  messageId: String! @index
+  channelId: String @index
+  nonce: Int! @index
+}
+
+type InboundMessageReceivedOnBridgeHub @entity {
   id: ID!
   blockNumber: Int! @index
   timestamp: DateTime! @index
-  extrinsicHash: String @index
-  from: Account!
-  to: Account!
-  amount: BigInt! @index
-  fee: BigInt! # fee is calculated at the best effort and may be zero for some old extrinsics
+  messageId: String! @index
+  channelId: String! @index
+  nonce: Int! @index
+}
+
+type MessageProcessedOnPolkadot @entity {
+  id: ID!
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  messageId: String! @index
+  success: Boolean! @index
+}
+
+type TransferStatusToPolkadot @entity {
+  id: ID!
+  messageId: String! @index
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  tokenAddress: String! @index
+  senderAddress: String! @index
+  destinationParaId: Int! @index
+  destinationAddress: String! @index
+  amount: BigInt!
+  channelId: String @index
+  nonce: Int! @index
+  status: String! @index
+}
+
+type TokenSentOnPolkadot @entity {
+  id: ID!
+  messageId: String! @index
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  tokenAddress: String! @index
+  senderAddress: String! @index
+  sourceParaId: Int! @index
+  destinationAddress: String! @index
+  amount: BigInt!
+}
+
+type OutboundMessageAcceptedOnBridgeHub @entity {
+  id: ID!
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  messageId: String! @index
+  channelId: String @index
+  nonce: Int! @index
+}
+
+type InboundMessageDispatchedOnEthereum @entity {
+  id: ID!
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  messageId: String! @index
+  channelId: String @index
+  nonce: Int! @index
+  success: Boolean! @index
+}
+
+type TransferStatusToEthereum @entity {
+  id: ID!
+  messageId: String! @index
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  tokenAddress: String! @index
+  senderAddress: String! @index
+  sourceParaId: Int! @index
+  destinationAddress: String! @index
+  amount: BigInt!
+  channelId: String @index
+  nonce: Int @index
+  status: String! @index
 }
