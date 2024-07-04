@@ -168,9 +168,9 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
     await ctx.store.save(processedMessages);
   }
 
-  if (transfersFromEthereum.length > 0) {
-    ctx.log.debug("saving transfer messages from ethereum");
-    await ctx.store.save(transfersFromEthereum);
+  if (tokenSentMessages.length > 0) {
+    ctx.log.debug("saving token sent messages to ethereum");
+    await ctx.store.save(tokenSentMessages);
   }
 
   if (transfersToEthereum.length > 0) {
