@@ -15,5 +15,14 @@ module.exports = {
       node_args: "--require=dotenv/config",
       script: "./lib/assethub/main.js",
     },
+    {
+      name: "graphql",
+      script: "./node_modules/.bin/squid-graphql-server",
+    },
+    {
+      name: "postprocess",
+      node_args: "--require=dotenv/config",
+      script: "./lib/postprocess/cron.js"
+    }
   ],
 };

@@ -89,22 +89,12 @@
       "deps": ["build", "migration:apply"],
       "cmd": ["node", "--require=dotenv/config", "lib/assethub/main.js"]
     },
-    "postprocess:toPolkadot": {
+    "postprocess": {
       "description": "Update status based on stored data",
       "cmd": [
         "node",
         "--require=dotenv/config",
-        "lib/postprocess/index.js",
-        "toPolkadot"
-      ]
-    },
-    "postprocess:toEthereum": {
-      "description": "Update status based on stored data",
-      "cmd": [
-        "node",
-        "--require=dotenv/config",
-        "lib/postprocess/index.js",
-        "toEthereum"
+        "lib/postprocess/start.js"
       ]
     },
     "serve": {

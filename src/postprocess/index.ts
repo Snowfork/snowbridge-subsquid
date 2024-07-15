@@ -13,16 +13,6 @@ import {
 import { TransferStatusEnum } from "../common";
 
 export const postProcess = async () => {
-  dotenv.config();
-
-  let direction: string;
-
-  if (process.argv.length == 3) {
-    direction = process.argv[2];
-  }
-
-  await registerTsNodeIfRequired();
-
   let connection = new DataSource({
     ...createOrmConfig(),
     subscribers: [],
@@ -35,11 +25,8 @@ export const postProcess = async () => {
   await connection.initialize();
 
   try {
-    if (direction! == "toPolkadot") {
-      await processToPolkadot(connection);
-    } else if (direction! == "toEthereum") {
-      await processToEthereum(connection);
-    }
+    await processToPolkadot(connection);
+    await processToEthereum(connection);
   } finally {
     await connection.destroy().catch(() => null);
   }
@@ -122,10 +109,3 @@ const processToEthereum = async (connection: DataSource) => {
   await connection.manager.save(updated);
   console.log("To ethereum transfer status updated");
 };
-
-postProcess()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error("Error:", error);
-    process.exit(1);
-  });
