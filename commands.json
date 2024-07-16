@@ -18,6 +18,10 @@
       "description": "Drop a PG database",
       "cmd": ["docker", "compose", "down"]
     },
+    "codegen": {
+      "description": "Generate TypeORM entities from the schema file",
+      "cmd": ["squid-typeorm-codegen"]
+    },
     "migration:apply": {
       "description": "Apply the DB migrations",
       "cmd": ["squid-typeorm-migration", "apply"]
@@ -36,24 +40,62 @@
       "cmd": ["squid-typeorm-migration", "generate"],
       "hidden": true
     },
-    "codegen": {
-      "description": "Generate TypeORM entities from the schema file",
-      "cmd": ["squid-typeorm-codegen"]
+    "typegen:ethereum": {
+      "description": "Generate data access classes for an ABI file(s)",
+      "cmd": [
+        "squid-evm-typegen",
+        "./src/ethereum/abi",
+        { "glob": "./abi/*.json" }
+      ]
     },
-    "typegen": {
-      "description": "Generate data access classes for an substrate metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen.json"]
-    },
-    "process": {
+    "process:ethereum": {
       "description": "Load .env and start the squid processor",
       "deps": ["build", "migration:apply"],
-      "cmd": ["node", "--require=dotenv/config", "lib/main.js"]
+      "cmd": ["node", "--require=dotenv/config", "lib/ethereum/main.js"]
     },
-    "process:prod": {
-      "description": "Start the squid processor",
-      "deps": ["migration:apply"],
-      "cmd": ["node", "lib/main.js"],
-      "hidden": true
+    "generateMeta:bridgehub": {
+      "description": "Generate metadata for bridge hub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://bridge-hub-polkadot-rpc.dwellir.com",
+        "--out=bridgehub-versions.jsonl"
+      ]
+    },
+    "typegen:bridgehub": {
+      "description": "Generate data access classes for an substrate metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-bridgehub.json"]
+    },
+    "process:bridgehub": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build", "migration:apply"],
+      "cmd": ["node", "--require=dotenv/config", "lib/bridgehub/main.js"]
+    },
+    "generateMeta:assethub": {
+      "description": "Generate metadata for asset hub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://asset-hub-polkadot-rpc.dwellir.com",
+        "--out=assethub-versions.jsonl"
+      ]
+    },
+    "typegen:assethub": {
+      "description": "Generate data access classes for an substrate metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-assethub.json"]
+    },
+    "process:assethub": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build", "migration:apply"],
+      "cmd": ["node", "--require=dotenv/config", "lib/assethub/main.js"]
+    },
+    "postprocess": {
+      "description": "Update status based on stored data",
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/postprocess/start.js"
+      ]
     },
     "serve": {
       "description": "Start the GraphQL API server",
