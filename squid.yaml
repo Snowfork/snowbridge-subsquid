@@ -1,18 +1,38 @@
 manifestVersion: subsquid.io/v0.1
 name: snowbridge-subsquid
 version: 1
-description: Substrate squid template
+description: Snowbridge squid
 build:
 deploy:
   addons:
     postgres:
     rpc:
-      - kusama.http
+      - eth-sepolia.http
+      - bridge-hub-westend.http
+      - asset-hub-westend.http
+  # migrate:
+  #   env:
+  #     FOO: bar
+  #   cmd: ["echo", "skip migrations!"]
   processor:
-    cmd:
-      - sqd
-      - process:prod
+    - name: ethereum-processor
+      env:
+        RPC_ETH_HTTP: ${{ secrets.RPC_ETH_HTTP }}
+      cmd: ["sqd", "process:ethereum"]
+    - name: bridgehub-processor
+      env:
+        RPC_ETH_HTTP: "wss://bridge-hub-polkadot-rpc.dwellir.com"
+      cmd: ["sqd", "process:bridgehub"]
+    - name: assethub-processor
+      env:
+        RPC_ETH_HTTP: "wss://asset-hub-polkadot-rpc.dwellir.com"
+      cmd: ["sqd", "process:assethub"]
+    - name: post-processor
+      cmd: ["sqd", "process:postprocess"]
   api:
-    cmd:
-      - sqd
-      - serve:prod
+    cmd: ["sqd", "serve:prod"]
+scale:
+  addons:
+    postgres:
+      storage: 100G
+      profile: medium
