@@ -91,11 +91,20 @@
     },
     "postprocess": {
       "description": "Update status based on stored data",
+      "cmd": ["node", "--require=dotenv/config", "lib/postprocess/start.js"]
+    },
+    "generateMeta:parachain:moonbeam": {
+      "description": "Generate metadata for moonbeam",
       "cmd": [
-        "node",
-        "--require=dotenv/config",
-        "lib/postprocess/start.js"
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://moonbeam.ibp.network",
+        "--out=moonbeam-versions.jsonl"
       ]
+    },
+    "typegen:parachain:moonbeam": {
+      "description": "Generate data access classes for an moombeam metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-moonbeam.json"]
     },
     "serve": {
       "description": "Start the GraphQL API server",
