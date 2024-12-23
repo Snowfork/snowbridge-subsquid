@@ -8,12 +8,7 @@ import {
 } from "../../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
-import {
-  AggregateMessageOrigin,
-  V4Instruction,
-  V4Location,
-  ProcessMessageError,
-} from "./types/v2901";
+import { V4Instruction, V4Location } from "./types/v3100";
 import {
   TransferStatusEnum,
   AssetHubParaId,
