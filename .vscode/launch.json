@@ -35,6 +35,15 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Launch process moonbeam",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["src/parachains/moonbeam/main.ts"],
+      "env": { "SQD_DEBUG": "*" }
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "post process status",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
