@@ -115,6 +115,28 @@
         "lib/parachains/moonbeam/main.js"
       ]
     },
+    "generateMeta:parachain:hydration": {
+      "description": "Generate metadata for hydration",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://hydration.dotters.network",
+        "--out=hydration-versions.jsonl"
+      ]
+    },
+    "typegen:parachain:hydration": {
+      "description": "Generate data access classes for hydration metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-hydration.json"]
+    },
+    "process:parachain:hydration": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build", "migration:apply"],
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/parachains/hydration/main.js"
+      ]
+    },
     "serve": {
       "description": "Start the GraphQL API server",
       "cmd": ["squid-graphql-server"]

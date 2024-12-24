@@ -4,7 +4,7 @@ export enum TransferStatusEnum {
   OutboundQueueReceived = "OutboundQueueReceived",
   Processed = "Processed",
   ProcessFailed = "ProcessFailed",
-  AssetHubForwarded = "AssetHubForwarded"
+  AssetHubForwarded = "AssetHubForwarded",
 }
 
 export const BridgeHubParaId = 1002;
@@ -12,3 +12,10 @@ export const BridgeHubParaId = 1002;
 export const AssetHubParaId = 1000;
 
 export const MoonBeamParaId = 2004;
+
+export const HydrationParaId = 2034;
+
+export interface EthereumNativeAsset {
+  address: string;
+  amount: bigint;
+}

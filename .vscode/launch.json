@@ -44,6 +44,15 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Launch process hydration",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["src/parachains/hydration/main.ts"],
+      "env": { "SQD_DEBUG": "*" }
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "post process status",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
