@@ -8,7 +8,7 @@
       "storage": [],
       "constants": []
     },
-    "ForeignAssets": {
+    "Assets": {
       "events": ["Created", "Issued", "Burned"],
       "calls": [],
       "storage": [],
