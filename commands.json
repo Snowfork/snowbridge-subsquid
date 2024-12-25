@@ -170,10 +170,6 @@
       "deps": ["check-updates"],
       "cmd": ["npm", "i", "-f"]
     },
-    "open": {
-      "description": "Open a local browser window",
-      "cmd": ["npx", "--yes", "opener"]
-    },
     "prettier": {
       "cmd": ["npx", "prettier", ".", "--write"]
     }
