@@ -13,6 +13,7 @@ import {
   TransferStatusEnum,
   AssetHubParaId,
   MoonBeamParaId,
+  EthereumNativeAsset,
 } from "../../common";
 
 processor.run(
@@ -29,6 +30,60 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
   await processOutboundEvents(ctx);
   await processInboundEvents(ctx);
 }
+
+const isDestinationToAssetHub = (destination: V4Location): boolean => {
+  if (
+    destination.parents == 1 &&
+    destination.interior.__kind == "X1" &&
+    destination.interior.value[0].__kind == "Parachain" &&
+    destination.interior.value[0].value == AssetHubParaId
+  ) {
+    return true;
+  }
+  return false;
+};
+
+const matchEthereumNativeAsset = (
+  instruction: V4Instruction
+): EthereumNativeAsset => {
+  let nullAsset = { address: "", amount: BigInt(0) };
+  if (instruction.__kind != "WithdrawAsset" || instruction.value.length < 2) {
+    return nullAsset;
+  }
+  let asset = instruction.value[1];
+  if (
+    asset.fun.__kind == "Fungible" &&
+    asset.id.interior.__kind == "X2" &&
+    asset.id.interior.value[0].__kind == "GlobalConsensus" &&
+    asset.id.interior.value[0].value.__kind == "Ethereum" &&
+    asset.id.interior.value[1].__kind == "AccountKey20"
+  ) {
+    return {
+      address: asset.id.interior.value[1].key,
+      amount: asset.fun.value,
+    };
+  }
+  return nullAsset;
+};
+
+const matchReserveTransferToEthereumWithBeneficiary = (
+  instruction: V4Instruction
+): string => {
+  if (
+    instruction.__kind == "InitiateReserveWithdraw" &&
+    instruction.reserve.parents == 2 &&
+    instruction.reserve.interior.__kind == "X1" &&
+    instruction.reserve.interior.value[0].__kind == "GlobalConsensus" &&
+    instruction.reserve.interior.value[0].value.__kind == "Ethereum" &&
+    instruction.xcm.length >= 2 &&
+    instruction.xcm[1].__kind == "DepositAsset" &&
+    instruction.xcm[1].beneficiary.interior.__kind == "X1" &&
+    instruction.xcm[1].beneficiary.interior.value[0].__kind == "AccountKey20"
+  ) {
+    return instruction.xcm[1].beneficiary.interior.value[0].key;
+  }
+  return "";
+};
 
 async function processOutboundEvents(ctx: ProcessorContext<Store>) {
   let tokenSentMessages: TokenSentOnPolkadot[] = [],
@@ -47,114 +102,93 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         } else {
           throw new Error("Unsupported spec");
         }
-        // Filter message to AH only
-        if (
-          rec.destination.parents == 1 &&
-          rec.destination.interior.__kind == "X1" &&
-          rec.destination.interior.value[0].__kind == "Parachain" &&
-          rec.destination.interior.value[0].value == AssetHubParaId
-        ) {
-          let amount: bigint;
-          let senderAddress: Bytes;
-          let tokenAddress: Bytes;
-          let destinationAddress: Bytes;
-          let messageId: Bytes;
-
-          if (rec.origin.interior.__kind == "X1") {
-            let val = rec.origin.interior.value[0];
-            if (val.__kind == "AccountId32") {
-              senderAddress = val.id;
-            } else if (val.__kind == "AccountKey20") {
-              senderAddress = val.key;
-            }
-          }
-
-          // Filter message which contains InitiateReserveWithdraw|DepositReserveAsset
-          if (rec.message.length > 5) {
-            let instruction0 = rec.message[0];
-            if (instruction0.__kind == "WithdrawAsset") {
-              if (instruction0.value.length != 2) {
-                continue;
-              }
-              let asset = instruction0.value[1];
-              if (asset.fun.__kind == "Fungible") {
-                if (asset.id.interior.__kind == "X2") {
-                  let val = asset.id.interior.value[0];
-                  // Filter only with ENA and will add PNA later
-                  if (
-                    val.__kind != "GlobalConsensus" ||
-                    val.value.__kind != "Ethereum"
-                  ) {
-                    continue;
-                  }
-                  let token_val = asset.id.interior.value[1];
-                  if (token_val.__kind == "AccountKey20") {
-                    tokenAddress = token_val.key;
-                  }
-                  amount = asset.fun.value;
-                }
-              }
-            }
-
-            // Filter for ENA
-            let instruction4 = rec.message[4];
-            if (instruction4.__kind == "InitiateReserveWithdraw") {
-              let reserve = instruction4.reserve;
-              if (
-                reserve.parents == 2 &&
-                reserve.interior.__kind == "X1" &&
-                reserve.interior.value[0].__kind == "GlobalConsensus" &&
-                reserve.interior.value[0].value.__kind == "Ethereum"
-              ) {
-                let instruction5 = rec.message[5];
-                if (instruction5.__kind == "SetTopic") {
-                  messageId = instruction5.value;
-                }
-                if (instruction4.xcm.length < 2) {
-                  continue;
-                }
-                let instruction3 = instruction4.xcm[1];
-                if (instruction3.__kind == "DepositAsset") {
-                  let beneficiary = instruction3.beneficiary;
-                  if (beneficiary.interior.__kind == "X1") {
-                    let val = beneficiary.interior.value[0];
-                    if (val.__kind == "AccountKey20") {
-                      destinationAddress = val.key;
-                    }
-                  }
-                }
-                let tokenSentMessage = new TokenSentOnPolkadot({
-                  id: event.id,
-                  txHash: event.extrinsic?.hash,
-                  blockNumber: block.header.height,
-                  timestamp: new Date(block.header.timestamp!),
-                  messageId: messageId!,
-                  tokenAddress: tokenAddress!,
-                  sourceParaId: MoonBeamParaId,
-                  senderAddress: senderAddress!,
-                  destinationAddress: destinationAddress!,
-                  amount: amount!,
-                });
-                tokenSentMessages.push(tokenSentMessage);
-
-                let message = new TransferStatusToEthereum({
-                  id: messageId!,
-                  txHash: event.extrinsic?.hash,
-                  blockNumber: block.header.height,
-                  timestamp: new Date(block.header.timestamp!),
-                  messageId: messageId!,
-                  tokenAddress: tokenAddress!,
-                  sourceParaId: MoonBeamParaId,
-                  senderAddress: senderAddress!,
-                  destinationAddress: destinationAddress!,
-                  amount: amount!,
-                  status: TransferStatusEnum.Sent,
-                });
-                transfersToEthereum.push(message);
-              }
-            }
+        // Filter message which contains instructions:
+        // [WithdrawAsset,ClearOrigin,BuyExecution,SetAppendix,InitiateReserveWithdraw,SetTopic]
+        if (rec.message.length < 6) {
+          continue;
+        }
+        let amount: bigint;
+        let senderAddress: Bytes = "";
+        let tokenAddress: Bytes = "";
+        let destinationAddress: Bytes = "";
+        let messageId: Bytes = "";
+        // Filter message destination to AH
+        if (!isDestinationToAssetHub(rec.destination)) {
+          continue;
+        }
+        // Get sender address
+        if (rec.origin.interior.__kind == "X1") {
+          let val = rec.origin.interior.value[0];
+          if (val.__kind == "AccountId32") {
+            senderAddress = val.id;
+          } else if (val.__kind == "AccountKey20") {
+            senderAddress = val.key;
           }
         }
+        if (!senderAddress) {
+          ctx.log.error("sender address not supported");
+          continue;
+        }
+        // Get tokenAddress and tokenAmount from WithdrawAsset
+        // Asset with index 0 is fee, asset with index 1 is the transferred asset
+        // Fiter with ENA
+        let instruction0 = rec.message[0];
+        let ethereumAsset = matchEthereumNativeAsset(instruction0);
+        if (!ethereumAsset.address) {
+          continue;
+        }
+        tokenAddress = ethereumAsset.address;
+        amount = ethereumAsset.amount;
+
+        // Get beneficiary from the inner InitiateReserveWithdraw
+        // Filter the inner InitiateReserveWithdraw with destination to Ethereum
+        let instruction4 = rec.message[4];
+        let ethreumBeneficiary =
+          matchReserveTransferToEthereumWithBeneficiary(instruction4);
+        if (!ethreumBeneficiary) {
+          ctx.log.error("no beneficiary");
+          continue;
+        }
+        destinationAddress = ethreumBeneficiary;
+
+        // Get messageId from SetTopic
+        let instruction5 = rec.message[5];
+        if (instruction5.__kind == "SetTopic") {
+          messageId = instruction5.value;
+        }
+        if (!messageId) {
+          ctx.log.error("no messageId");
+          continue;
+        }
+
+        let tokenSentMessage = new TokenSentOnPolkadot({
+          id: event.id,
+          txHash: event.extrinsic?.hash,
+          blockNumber: block.header.height,
+          timestamp: new Date(block.header.timestamp!),
+          messageId: messageId!,
+          tokenAddress: tokenAddress!,
+          sourceParaId: MoonBeamParaId,
+          senderAddress: senderAddress!,
+          destinationAddress: destinationAddress!,
+          amount: amount!,
+        });
+        tokenSentMessages.push(tokenSentMessage);
+
+        let message = new TransferStatusToEthereum({
+          id: messageId!,
+          txHash: event.extrinsic?.hash,
+          blockNumber: block.header.height,
+          timestamp: new Date(block.header.timestamp!),
+          messageId: messageId!,
+          tokenAddress: tokenAddress!,
+          sourceParaId: MoonBeamParaId,
+          senderAddress: senderAddress!,
+          destinationAddress: destinationAddress!,
+          amount: amount!,
+          status: TransferStatusEnum.Sent,
+        });
+        transfersToEthereum.push(message);
       }
     }
   }

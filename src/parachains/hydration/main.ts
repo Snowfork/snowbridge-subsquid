@@ -103,6 +103,11 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         } else {
           throw new Error("Unsupported spec");
         }
+        // Filter message which contains instructions:
+        // [WithdrawAsset,ClearOrigin,BuyExecution,SetAppendix,InitiateReserveWithdraw,SetTopic]
+        if (rec.message.length < 6) {
+          continue;
+        }
         let amount: bigint;
         let senderAddress: Bytes = "";
         let tokenAddress: Bytes = "";
@@ -123,12 +128,6 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         }
         if (!senderAddress) {
           ctx.log.error("sender address not supported");
-          continue;
-        }
-
-        // Filter message which contains instructions:
-        // [WithdrawAsset,ClearOrigin,BuyExecution,SetAppendix,InitiateReserveWithdraw,SetTopic]
-        if (rec.message.length < 6) {
           continue;
         }
 
