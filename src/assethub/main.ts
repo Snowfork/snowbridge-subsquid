@@ -22,15 +22,14 @@ processor.run(
     stateSchema: "assethub_processor",
   }),
   async (ctx) => {
-    await processBridgeEvents(ctx);
+    await processInboundEvents(ctx);
+    await processOutboundEvents(ctx);
   }
 );
 
-async function processBridgeEvents(ctx: ProcessorContext<Store>) {
+async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let processedMessages: MessageProcessedOnPolkadot[] = [],
-    transfersFromEthereum: TransferStatusToPolkadot[] = [],
-    tokenSentMessages: TokenSentOnPolkadot[] = [],
-    transfersToEthereum: TransferStatusToEthereum[] = [];
+    transfersFromEthereum: TransferStatusToPolkadot[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (
@@ -75,7 +74,25 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
             transfersFromEthereum.push(transfer);
           }
         }
-      } else if (event.name == events.polkadotXcm.sent.name) {
+      }
+    }
+  }
+  if (processedMessages.length > 0) {
+    ctx.log.debug("saving transfer messages from bridge hub");
+    await ctx.store.save(processedMessages);
+  }
+  if (transfersFromEthereum.length > 0) {
+    ctx.log.debug("saving transfer messages from ethereum");
+    await ctx.store.save(transfersFromEthereum);
+  }
+}
+
+async function processOutboundEvents(ctx: ProcessorContext<Store>) {
+  let tokenSentMessages: TokenSentOnPolkadot[] = [],
+    transfersToEthereum: TransferStatusToEthereum[] = [];
+  for (let block of ctx.blocks) {
+    for (let event of block.events) {
+      if (event.name == events.polkadotXcm.sent.name) {
         let rec: {
           origin: V4Location;
           destination: V4Location;
@@ -162,10 +179,6 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
         }
       }
     }
-  }
-  if (processedMessages.length > 0) {
-    ctx.log.debug("saving transfer messages from bridge hub");
-    await ctx.store.save(processedMessages);
   }
 
   if (tokenSentMessages.length > 0) {
