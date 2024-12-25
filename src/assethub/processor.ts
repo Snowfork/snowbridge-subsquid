@@ -27,13 +27,16 @@ export const processor = new SubstrateBatchProcessor()
     rateLimit: 10,
   })
   .setBlockRange({
-    from: 6457397,
+    from: 7488254,
   })
   .addEvent({
     name: [
       events.messageQueue.processed.name,
       events.messageQueue.processingFailed.name,
       events.polkadotXcm.sent.name,
+      events.foreignAssets.burned.name,
+      events.foreignAssets.issued.name,
+      events.xcmpQueue.xcmpMessageSent.name,
     ],
     extrinsic: true,
   })

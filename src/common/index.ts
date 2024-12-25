@@ -1,10 +1,15 @@
 export enum TransferStatusEnum {
+  // Sent on source chain
   Sent = "Sent",
+  // InboundQueueReceived | OutboundQueueReceived on BH
   InboundQueueReceived = "InboundQueueReceived",
   OutboundQueueReceived = "OutboundQueueReceived",
+  // InboundForwared | OutboundForwared on AH
+  InboundForwared = "InboundForwared",
+  OutboundForwared = "OutboundForwared",
+  // Processed | ProcessFailed on destination
   Processed = "Processed",
   ProcessFailed = "ProcessFailed",
-  AssetHubForwarded = "AssetHubForwarded",
 }
 
 export const BridgeHubParaId = 1002;

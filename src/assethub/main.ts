@@ -13,7 +13,9 @@ import {
   V4Instruction,
   V4Location,
   ProcessMessageError,
+  V3MultiLocation,
 } from "./types/v1002000";
+import { V4Location as V4Location1003004 } from "./types/v1003004";
 import { TransferStatusEnum, BridgeHubParaId, AssetHubParaId } from "../common";
 
 processor.run(
@@ -24,12 +26,13 @@ processor.run(
   async (ctx) => {
     await processInboundEvents(ctx);
     await processOutboundEvents(ctx);
+    await processForwardOutboundEvents(ctx);
   }
 );
 
 async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let processedMessages: MessageProcessedOnPolkadot[] = [],
-    transfersFromEthereum: TransferStatusToPolkadot[] = [];
+    transfersToPolkadot: TransferStatusToPolkadot[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (
@@ -71,7 +74,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
             } else {
               transfer.status = TransferStatusEnum.ProcessFailed;
             }
-            transfersFromEthereum.push(transfer);
+            transfersToPolkadot.push(transfer);
           }
         }
       }
@@ -81,9 +84,9 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
     ctx.log.debug("saving transfer messages from bridge hub");
     await ctx.store.save(processedMessages);
   }
-  if (transfersFromEthereum.length > 0) {
+  if (transfersToPolkadot.length > 0) {
     ctx.log.debug("saving transfer messages from ethereum");
-    await ctx.store.save(transfersFromEthereum);
+    await ctx.store.save(transfersToPolkadot);
   }
 }
 
@@ -186,6 +189,104 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     await ctx.store.save(tokenSentMessages);
   }
 
+  if (transfersToEthereum.length > 0) {
+    ctx.log.debug("saving transfer messages to ethereum");
+    await ctx.store.save(transfersToEthereum);
+  }
+}
+
+async function processForwardOutboundEvents(ctx: ProcessorContext<Store>) {
+  let transfersToEthereum: TransferStatusToEthereum[] = [],
+    processedMessagesForwarded: MessageProcessedOnPolkadot[] = [];
+  for (let block of ctx.blocks) {
+    let foreignAssetBurned = false,
+      messageSent = false;
+    let message: MessageProcessedOnPolkadot;
+    for (let event of block.events) {
+      if (event.name == events.foreignAssets.burned.name) {
+        let rec: {
+          assetId: V3MultiLocation;
+        };
+        if (events.foreignAssets.burned.v1002000.is(event)) {
+          rec = events.foreignAssets.burned.v1002000.decode(event);
+          if (
+            rec.assetId.parents == 2 &&
+            rec.assetId.interior.__kind == "X2" &&
+            rec.assetId.interior.value[0].__kind == "GlobalConsensus" &&
+            rec.assetId.interior.value[0].value.__kind == "Ethereum" &&
+            rec.assetId.interior.value[1].__kind == "AccountKey20"
+          ) {
+            foreignAssetBurned = true;
+          }
+        } else if (events.foreignAssets.burned.v1003004.is(event)) {
+          let rec: {
+            assetId: V4Location1003004;
+          };
+          if (events.foreignAssets.burned.v1003004.is(event)) {
+            rec = events.foreignAssets.burned.v1003004.decode(event);
+            if (
+              rec.assetId.parents == 2 &&
+              rec.assetId.interior.__kind == "X2" &&
+              rec.assetId.interior.value[0].__kind == "GlobalConsensus" &&
+              rec.assetId.interior.value[0].value.__kind == "Ethereum" &&
+              rec.assetId.interior.value[1].__kind == "AccountKey20"
+            ) {
+              foreignAssetBurned = true;
+            }
+          } else {
+            throw new Error("Unsupported spec");
+          }
+        }
+      } else if (event.name == events.xcmpQueue.xcmpMessageSent.name) {
+        let rec: {
+          messageHash: Bytes;
+        };
+        if (events.xcmpQueue.xcmpMessageSent.v1000000.is(event)) {
+          rec = events.xcmpQueue.xcmpMessageSent.v1000000.decode(event);
+        } else {
+          throw new Error("Unsupported spec");
+        }
+        messageSent = true;
+      } else if (event.name == events.messageQueue.processed.name) {
+        let rec: {
+          id: Bytes;
+          origin: AggregateMessageOrigin;
+          success?: boolean;
+          error?: ProcessMessageError;
+        };
+        if (events.messageQueue.processed.v1002000.is(event)) {
+          rec = events.messageQueue.processed.v1002000.decode(event);
+        } else {
+          throw new Error("Unsupported spec");
+        }
+        // Filter message from non system parachain
+        if (rec.origin.__kind == "Sibling" && rec.origin.value >= 2000) {
+          message = new MessageProcessedOnPolkadot({
+            id: event.id,
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: rec.id.toString().toLowerCase(),
+            success: rec.success,
+          });
+        }
+      }
+    }
+    if (foreignAssetBurned && messageSent && message!) {
+      processedMessagesForwarded.push(message);
+      let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
+        id: message.messageId,
+      });
+      if (transfer!) {
+        transfer.status = TransferStatusEnum.OutboundForwared;
+        transfersToEthereum.push(transfer);
+      }
+    }
+  }
+
+  if (processedMessagesForwarded.length > 0) {
+    ctx.log.debug("saving forwarded messages to ethereum");
+    await ctx.store.save(processedMessagesForwarded);
+  }
   if (transfersToEthereum.length > 0) {
     ctx.log.debug("saving transfer messages to ethereum");
     await ctx.store.save(transfersToEthereum);
