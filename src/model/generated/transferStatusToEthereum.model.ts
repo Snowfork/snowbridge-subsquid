@@ -55,4 +55,13 @@ export class TransferStatusToEthereum {
     @Index_()
     @StringColumn_({nullable: false})
     status!: string
+
+    @IntColumn_({nullable: true})
+    forwardedBlockNumber!: number | undefined | null
+
+    @IntColumn_({nullable: true})
+    bridgedBlockNumber!: number | undefined | null
+
+    @IntColumn_({nullable: true})
+    destinationBlockNumber!: number | undefined | null
 }

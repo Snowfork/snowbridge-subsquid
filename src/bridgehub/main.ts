@@ -49,7 +49,10 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
           id: message.messageId,
         });
         if (transfer!) {
-          transfer.status = TransferStatusEnum.InboundQueueReceived;
+          transfer.bridgedBlockNumber = block.header.height;
+          if (transfer.status == TransferStatusEnum.Sent) {
+            transfer.status = TransferStatusEnum.Bridged;
+          }
           transfersToPolkadot.push(transfer);
         }
       }
@@ -68,7 +71,6 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
           timestamp: new Date(block.header.timestamp!),
           messageId: rec.id.toString().toLowerCase(),
           nonce: Number(rec.nonce),
-          // Todo: Wait for https://github.com/Snowfork/polkadot-sdk/pull/147 and re-index
           channelId: rec.channelId,
         });
         outboundMessages.push(message);
@@ -79,7 +81,13 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
         if (transfer!) {
           transfer.channelId = rec.channelId;
           transfer.nonce = Number(rec.nonce);
-          transfer.status = TransferStatusEnum.OutboundQueueReceived;
+          transfer.bridgedBlockNumber = block.header.height;
+          if (
+            transfer.status == TransferStatusEnum.Sent ||
+            transfer.status == TransferStatusEnum.Forwarded
+          ) {
+            transfer.status = TransferStatusEnum.Bridged;
+          }
           transfersToEthereum.push(transfer);
         }
       }

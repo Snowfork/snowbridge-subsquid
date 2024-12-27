@@ -13,8 +13,7 @@ import { TransferStatusEnum } from "../common";
 processor.run(
   new TypeormDatabase({ supportHotBlocks: true, stateSchema: "eth_processor" }),
   async (ctx) => {
-    let tokenSents: TokenSentOnEthereum[] = [],
-      outboundMessages: OutboundMessageAcceptedOnEthereum[] = [],
+    let outboundMessages: OutboundMessageAcceptedOnEthereum[] = [],
       transfersToPolkadot: TransferStatusToPolkadot[] = [],
       inboundMessages: InboundMessageDispatchedOnEthereum[] = [],
       transfersToEthereum: TransferStatusToEthereum[] = [];
@@ -43,7 +42,6 @@ processor.run(
             destinationAddress: destinationAddress.data,
             amount: amount,
           });
-          tokenSents.push(tokenSent);
         } else if (
           log.topics[0] == gateway.events.OutboundMessageAccepted.topic
         ) {
@@ -58,7 +56,6 @@ processor.run(
             messageId: messageID.toString().toLowerCase(),
             nonce: Number(nonce),
           });
-          outboundMessages.push(outboundMessageAccepted);
         } else if (
           log.topics[0] == gateway.events.InboundMessageDispatched.topic
         ) {
@@ -81,6 +78,7 @@ processor.run(
           });
           if (transfer!) {
             transfer.channelId = inboundMessage.channelId;
+            transfer.destinationBlockNumber = c.header.height;
             if (inboundMessage.success) {
               transfer.status = TransferStatusEnum.Processed;
             } else {
@@ -96,6 +94,7 @@ processor.run(
         tokenSent! &&
         tokenSent.txHash == outboundMessageAccepted.txHash
       ) {
+        outboundMessages.push(outboundMessageAccepted);
         transfersToPolkadot.push(
           new TransferStatusToPolkadot({
             id: outboundMessageAccepted.messageId,
@@ -114,9 +113,6 @@ processor.run(
           })
         );
       }
-    }
-    if (tokenSents.length > 0) {
-      await ctx.store.save(tokenSents);
     }
     if (outboundMessages.length > 0) {
       await ctx.store.save(outboundMessages);

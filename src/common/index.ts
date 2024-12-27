@@ -1,12 +1,10 @@
 export enum TransferStatusEnum {
   // Sent on source chain
   Sent = "Sent",
-  // InboundQueueReceived | OutboundQueueReceived on BH
-  InboundQueueReceived = "InboundQueueReceived",
-  OutboundQueueReceived = "OutboundQueueReceived",
-  // InboundForwared | OutboundForwared on AH
-  InboundForwared = "InboundForwared",
-  OutboundForwared = "OutboundForwared",
+  // Bridged on BH
+  Bridged = "Bridged",
+  // Forwarded on AH
+  Forwarded = "Forwarded",
   // Processed | ProcessFailed on destination
   Processed = "Processed",
   ProcessFailed = "ProcessFailed",

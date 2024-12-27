@@ -3,12 +3,16 @@ import { processor, ProcessorContext } from "./processor";
 import {
   MessageProcessedOnPolkadot,
   TransferStatusToPolkadot,
-  TokenSentOnPolkadot,
   TransferStatusToEthereum,
 } from "../../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
-import { V4Instruction, V4Location, V4Asset } from "./types/v244";
+import {
+  V4Instruction,
+  V4Location,
+  AggregateMessageOrigin,
+  ProcessMessageError,
+} from "./types/v244";
 import {
   TransferStatusEnum,
   AssetHubParaId,
@@ -23,14 +27,10 @@ processor.run(
     stateSchema: "hydration_processor",
   }),
   async (ctx) => {
-    await processBridgeEvents(ctx);
+    await processOutboundEvents(ctx);
+    await processInboundEvents(ctx);
   }
 );
-
-async function processBridgeEvents(ctx: ProcessorContext<Store>) {
-  await processOutboundEvents(ctx);
-  await processInboundEvents(ctx);
-}
 
 const isDestinationToAssetHub = (destination: V4Location): boolean => {
   if (
@@ -67,9 +67,22 @@ const matchEthereumNativeAsset = (
   return nullAsset;
 };
 
-const matchReserveTransferToEthereumWithBeneficiary = (
+const matchReserveTransferToEthereum = (
   instruction: V4Instruction
-): string => {
+): boolean => {
+  if (
+    instruction.__kind == "InitiateReserveWithdraw" &&
+    instruction.reserve.parents == 2 &&
+    instruction.reserve.interior.__kind == "X1" &&
+    instruction.reserve.interior.value[0].__kind == "GlobalConsensus" &&
+    instruction.reserve.interior.value[0].value.__kind == "Ethereum"
+  ) {
+    return true;
+  }
+  return false;
+};
+
+const matchEthereumBeneficiary = (instruction: V4Instruction): string => {
   if (
     instruction.__kind == "InitiateReserveWithdraw" &&
     instruction.reserve.parents == 2 &&
@@ -87,8 +100,7 @@ const matchReserveTransferToEthereumWithBeneficiary = (
 };
 
 async function processOutboundEvents(ctx: ProcessorContext<Store>) {
-  let tokenSentMessages: TokenSentOnPolkadot[] = [],
-    transfersToEthereum: TransferStatusToEthereum[] = [];
+  let transfersToEthereum: TransferStatusToEthereum[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (event.name == events.polkadotXcm.sent.name) {
@@ -133,7 +145,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
 
         // Get tokenAddress and tokenAmount from WithdrawAsset
         // Asset with index 0 is fee, asset with index 1 is the transferred asset
-        // Fiter with ENA
+        // Fiter for ENA
         let instruction0 = rec.message[0];
         let ethereumAsset = matchEthereumNativeAsset(instruction0);
         if (!ethereumAsset.address) {
@@ -142,13 +154,18 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         tokenAddress = ethereumAsset.address;
         amount = ethereumAsset.amount;
 
-        // Get beneficiary from the inner InitiateReserveWithdraw
         // Filter the inner InitiateReserveWithdraw with destination to Ethereum
         let instruction4 = rec.message[4];
-        let ethreumBeneficiary =
-          matchReserveTransferToEthereumWithBeneficiary(instruction4);
+        let toEthereum = matchReserveTransferToEthereum(instruction4);
+        if (!toEthereum) {
+          ctx.log.error("no reserve transfer to ethereum");
+          continue;
+        }
+
+        // Get beneficiary from the inner InitiateReserveWithdraw
+        let ethreumBeneficiary = matchEthereumBeneficiary(instruction4);
         if (!ethreumBeneficiary) {
-          ctx.log.error("no beneficiary");
+          ctx.log.error("no ethereum beneficiary");
           continue;
         }
         destinationAddress = ethreumBeneficiary;
@@ -163,8 +180,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           continue;
         }
 
-        let tokenSentMessage = new TokenSentOnPolkadot({
-          id: event.id,
+        let transfer = new TransferStatusToEthereum({
+          id: messageId!,
           txHash: event.extrinsic?.hash,
           blockNumber: block.header.height,
           timestamp: new Date(block.header.timestamp!),
@@ -174,30 +191,11 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           senderAddress: senderAddress!,
           destinationAddress: destinationAddress!,
           amount: amount!,
-        });
-        tokenSentMessages.push(tokenSentMessage);
-
-        let message = new TransferStatusToEthereum({
-          id: messageId!,
-          txHash: event.extrinsic?.hash,
-          blockNumber: block.header.height,
-          timestamp: new Date(block.header.timestamp!),
-          messageId: messageId!,
-          tokenAddress: tokenAddress!,
-          sourceParaId: MoonBeamParaId,
-          senderAddress: senderAddress!,
-          destinationAddress: destinationAddress!,
-          amount: amount!,
           status: TransferStatusEnum.Sent,
         });
-        transfersToEthereum.push(message);
+        transfersToEthereum.push(transfer);
       }
     }
-  }
-
-  if (tokenSentMessages.length > 0) {
-    ctx.log.debug("saving token sent messages to ethereum");
-    await ctx.store.save(tokenSentMessages);
   }
 
   if (transfersToEthereum.length > 0) {
@@ -206,4 +204,56 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
   }
 }
 
-async function processInboundEvents(ctx: ProcessorContext<Store>) {}
+async function processInboundEvents(ctx: ProcessorContext<Store>) {
+  let processedMessages: MessageProcessedOnPolkadot[] = [],
+    transfersFromEthereum: TransferStatusToPolkadot[] = [];
+  for (let block of ctx.blocks) {
+    for (let event of block.events) {
+      if (
+        event.name == events.messageQueue.processed.name ||
+        event.name == events.messageQueue.processingFailed.name
+      ) {
+        let rec: {
+          id: Bytes;
+          origin: AggregateMessageOrigin;
+          success?: boolean;
+          error?: ProcessMessageError;
+        };
+        if (events.messageQueue.processed.v244.is(event)) {
+          rec = events.messageQueue.processed.v244.decode(event);
+        } else if (events.messageQueue.processingFailed.v244.is(event)) {
+          rec = events.messageQueue.processingFailed.v244.decode(event);
+        } else {
+          throw new Error("Unsupported spec");
+        }
+        // Filter message from AH
+        if (
+          rec.origin.__kind == "Sibling" &&
+          rec.origin.value == AssetHubParaId
+        ) {
+          let message = new MessageProcessedOnPolkadot({
+            id: event.id,
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: rec.id.toString().toLowerCase(),
+            paraId: HydrationParaId,
+            success: rec.success,
+          });
+          processedMessages.push(message);
+          let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
+            id: message.messageId,
+          });
+          if (transfer!) {
+            if (rec.success) {
+              transfer.status = TransferStatusEnum.Processed;
+            } else {
+              transfer.status = TransferStatusEnum.ProcessFailed;
+            }
+            transfer.destinationBlockNumber = block.header.height;
+            transfersFromEthereum.push(transfer);
+          }
+        }
+      }
+    }
+  }
+}

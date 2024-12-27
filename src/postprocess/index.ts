@@ -1,16 +1,12 @@
 import { createOrmConfig } from "@subsquid/typeorm-config";
-import { registerTsNodeIfRequired } from "@subsquid/util-internal-ts-node";
-import * as dotenv from "dotenv";
-import { DataSource } from "typeorm";
+import { DataSource, Not } from "typeorm";
 import {
   TransferStatusToPolkadot,
   TransferStatusToEthereum,
-  InboundMessageReceivedOnBridgeHub,
-  OutboundMessageAcceptedOnBridgeHub,
   MessageProcessedOnPolkadot,
   InboundMessageDispatchedOnEthereum,
 } from "../model";
-import { TransferStatusEnum } from "../common";
+import { AssetHubParaId, TransferStatusEnum } from "../common";
 
 export const postProcess = async () => {
   let connection = new DataSource({
@@ -37,16 +33,27 @@ const processToPolkadot = async (connection: DataSource) => {
   let transfers = await connection.manager.find(TransferStatusToPolkadot, {
     where: [
       { status: TransferStatusEnum.Sent },
-      { status: TransferStatusEnum.InboundQueueReceived },
+      { status: TransferStatusEnum.Bridged },
+      { status: TransferStatusEnum.Forwarded },
     ],
   });
   for (let transfer of transfers) {
-    let processedMessage = await connection.manager.findOneBy(
+    let processedMessage;
+    processedMessage = await connection.manager.findOneBy(
       MessageProcessedOnPolkadot,
       {
         messageId: transfer.id,
+        paraId: Not(AssetHubParaId),
       }
     );
+    if (!processedMessage) {
+      processedMessage = await connection.manager.findOneBy(
+        MessageProcessedOnPolkadot,
+        {
+          messageId: transfer.id,
+        }
+      );
+    }
     if (processedMessage!) {
       if (processedMessage.success) {
         transfer.status = TransferStatusEnum.Processed;
@@ -54,17 +61,6 @@ const processToPolkadot = async (connection: DataSource) => {
         transfer.status = TransferStatusEnum.ProcessFailed;
       }
       updated.push(transfer);
-    } else {
-      let inboundMessage = await connection.manager.findOneBy(
-        InboundMessageReceivedOnBridgeHub,
-        {
-          messageId: transfer.id,
-        }
-      );
-      if (inboundMessage!) {
-        transfer.status = TransferStatusEnum.InboundQueueReceived;
-        updated.push(transfer);
-      }
     }
   }
   await connection.manager.save(updated);
@@ -76,7 +72,8 @@ const processToEthereum = async (connection: DataSource) => {
   let transfers = await connection.manager.find(TransferStatusToEthereum, {
     where: [
       { status: TransferStatusEnum.Sent },
-      { status: TransferStatusEnum.OutboundQueueReceived },
+      { status: TransferStatusEnum.Bridged },
+      { status: TransferStatusEnum.Forwarded },
     ],
   });
   for (let transfer of transfers) {
@@ -93,17 +90,6 @@ const processToEthereum = async (connection: DataSource) => {
         transfer.status = TransferStatusEnum.ProcessFailed;
       }
       updated.push(transfer);
-    } else {
-      let outboundMessage = await connection.manager.findOneBy(
-        OutboundMessageAcceptedOnBridgeHub,
-        {
-          messageId: transfer.id,
-        }
-      );
-      if (outboundMessage!) {
-        transfer.status = TransferStatusEnum.OutboundQueueReceived;
-        updated.push(transfer);
-      }
     }
   }
   await connection.manager.save(updated);

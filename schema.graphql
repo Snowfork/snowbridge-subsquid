@@ -34,6 +34,7 @@ type MessageProcessedOnPolkadot @entity {
   blockNumber: Int! @index
   timestamp: DateTime! @index
   messageId: String! @index
+  paraId: Int! @index
   success: Boolean! @index
 }
 
@@ -51,19 +52,9 @@ type TransferStatusToPolkadot @entity {
   channelId: String @index
   nonce: Int! @index
   status: String! @index
-}
-
-type TokenSentOnPolkadot @entity {
-  id: ID!
-  messageId: String! @index
-  txHash: String! @index
-  blockNumber: Int! @index
-  timestamp: DateTime! @index
-  tokenAddress: String! @index
-  senderAddress: String! @index
-  sourceParaId: Int! @index
-  destinationAddress: String! @index
-  amount: BigInt!
+  forwardedBlockNumber: Int
+  bridgedBlockNumber: Int
+  destinationBlockNumber: Int
 }
 
 type OutboundMessageAcceptedOnBridgeHub @entity {
@@ -100,4 +91,7 @@ type TransferStatusToEthereum @entity {
   channelId: String @index
   nonce: Int @index
   status: String! @index
+  forwardedBlockNumber: Int
+  bridgedBlockNumber: Int
+  destinationBlockNumber: Int
 }
