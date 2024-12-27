@@ -57,7 +57,7 @@
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
       // "args": ["src/postprocess/index.ts", "toPolkadot"],
-      "args": ["src/postprocess/index.ts", "toEthereum"],
+      "args": ["src/postprocess/start.ts"],
       "env": { "SQD_DEBUG": "*" }
     }
   ]

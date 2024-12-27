@@ -179,7 +179,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           continue;
         }
 
-        let transfer = new TransferStatusToEthereum({
+        let transferToEthereum = new TransferStatusToEthereum({
           id: messageId!,
           txHash: event.extrinsic?.hash,
           blockNumber: block.header.height,
@@ -192,7 +192,12 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           amount: amount!,
           status: TransferStatusEnum.Sent,
         });
-        transfersToEthereum.push(transfer);
+        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
+          id: transferToEthereum.messageId,
+        });
+        if (!transfer) {
+          transfersToEthereum.push(transferToEthereum);
+        }
       }
     }
   }

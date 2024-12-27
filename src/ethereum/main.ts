@@ -69,23 +69,31 @@ async function processOutboundEvents(ctx: Context) {
       tokenSent.txHash == outboundMessageAccepted.txHash
     ) {
       outboundMessages.push(outboundMessageAccepted);
-      transfersToPolkadot.push(
-        new TransferStatusToPolkadot({
+      let transferToPolkadot = await ctx.store.findOneBy(
+        TransferStatusToPolkadot,
+        {
           id: outboundMessageAccepted.messageId,
-          messageId: outboundMessageAccepted.messageId,
-          txHash: outboundMessageAccepted.txHash,
-          blockNumber: c.header.height,
-          timestamp: new Date(c.header.timestamp),
-          channelId: outboundMessageAccepted.channelId,
-          nonce: outboundMessageAccepted.nonce,
-          tokenAddress: tokenSent.tokenAddress,
-          senderAddress: tokenSent.senderAddress,
-          destinationParaId: tokenSent.destinationParaId,
-          destinationAddress: tokenSent.destinationAddress,
-          amount: tokenSent.amount,
-          status: TransferStatusEnum.Sent,
-        })
+        }
       );
+      if (!transferToPolkadot) {
+        transfersToPolkadot.push(
+          new TransferStatusToPolkadot({
+            id: outboundMessageAccepted.messageId,
+            messageId: outboundMessageAccepted.messageId,
+            txHash: outboundMessageAccepted.txHash,
+            blockNumber: c.header.height,
+            timestamp: new Date(c.header.timestamp),
+            channelId: outboundMessageAccepted.channelId,
+            nonce: outboundMessageAccepted.nonce,
+            tokenAddress: tokenSent.tokenAddress,
+            senderAddress: tokenSent.senderAddress,
+            destinationParaId: tokenSent.destinationParaId,
+            destinationAddress: tokenSent.destinationAddress,
+            amount: tokenSent.amount,
+            status: TransferStatusEnum.Sent,
+          })
+        );
+      }
     }
   }
   if (outboundMessages.length > 0) {

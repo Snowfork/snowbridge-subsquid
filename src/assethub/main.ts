@@ -168,7 +168,12 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     if (foreignAssetBurned) {
       // Start from AH
       if (transferToEthereum!) {
-        transfersToEthereum.push(transferToEthereum);
+        let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
+          id: transferToEthereum.messageId,
+        });
+        if (!transfer) {
+          transfersToEthereum.push(transferToEthereum);
+        }
       }
       // Start from 3rd Parachain
       if (messageForwarded!) {
@@ -267,29 +272,34 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
         }
       }
     }
-    if (foreignAssetIssued) {
-      if (processedMessage!) {
-        processedMessages.push(processedMessage);
-        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
-          id: processedMessage.messageId,
-        });
-        if (transfer!) {
-          if (transfer.destinationParaId == AssetHubParaId) {
-            // Terminated on AH
-            transfer.status = TransferStatusEnum.Processed;
-            transfer.destinationBlockNumber = block.header.height;
-          } else {
-            // Forward to 3rd Parachain
-            if (
-              transfer.status == TransferStatusEnum.Sent ||
-              transfer.status == TransferStatusEnum.Bridged
-            ) {
-              transfer.status = TransferStatusEnum.Forwarded;
+
+    if (processedMessage!) {
+      processedMessages.push(processedMessage);
+      let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
+        id: processedMessage.messageId,
+      });
+      if (transfer!) {
+        if (!processedMessage.success) {
+          transfer.status = TransferStatusEnum.ProcessFailed;
+        } else {
+          if (foreignAssetIssued) {
+            if (transfer.destinationParaId == AssetHubParaId) {
+              // Terminated on AH
+              transfer.destinationBlockNumber = block.header.height;
+              transfer.status = TransferStatusEnum.Processed;
+            } else {
+              // Forward to 3rd Parachain
+              transfer.forwardedBlockNumber = block.header.height;
+              if (
+                transfer.status == TransferStatusEnum.Sent ||
+                transfer.status == TransferStatusEnum.Bridged
+              ) {
+                transfer.status = TransferStatusEnum.Forwarded;
+              }
             }
-            transfer.forwardedBlockNumber = block.header.height;
           }
-          transfersToPolkadot.push(transfer);
         }
+        transfersToPolkadot.push(transfer);
       }
     }
   }
