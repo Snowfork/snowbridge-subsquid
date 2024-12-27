@@ -46,10 +46,9 @@ const isDestinationToAssetHub = (destination: V4Location): boolean => {
 
 const matchEthereumNativeAsset = (
   instruction: V4Instruction
-): EthereumNativeAsset => {
-  let nullAsset = { address: "", amount: BigInt(0) };
+): EthereumNativeAsset | undefined => {
   if (instruction.__kind != "WithdrawAsset" || instruction.value.length < 2) {
-    return nullAsset;
+    return;
   }
   let asset = instruction.value[1];
   if (
@@ -64,7 +63,7 @@ const matchEthereumNativeAsset = (
       amount: asset.fun.value,
     };
   }
-  return nullAsset;
+  return;
 };
 
 const matchReserveTransferToEthereum = (
@@ -148,7 +147,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         // Fiter for ENA
         let instruction0 = rec.message[0];
         let ethereumAsset = matchEthereumNativeAsset(instruction0);
-        if (!ethereumAsset.address) {
+        if (!ethereumAsset) {
           continue;
         }
         tokenAddress = ethereumAsset.address;
@@ -206,7 +205,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
 
 async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let processedMessages: MessageProcessedOnPolkadot[] = [],
-    transfersFromEthereum: TransferStatusToPolkadot[] = [];
+    transfersToPolkadot: TransferStatusToPolkadot[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (
@@ -250,10 +249,18 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
               transfer.status = TransferStatusEnum.ProcessFailed;
             }
             transfer.destinationBlockNumber = block.header.height;
-            transfersFromEthereum.push(transfer);
+            transfersToPolkadot.push(transfer);
           }
         }
       }
     }
+  }
+  if (processedMessages.length > 0) {
+    ctx.log.debug("saving messageQueue processed messages");
+    await ctx.store.save(processedMessages);
+  }
+  if (transfersToPolkadot.length > 0) {
+    ctx.log.debug("saving transfer messages from ethereum to polkadot");
+    await ctx.store.save(transfersToPolkadot);
   }
 }

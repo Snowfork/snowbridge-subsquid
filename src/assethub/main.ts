@@ -29,7 +29,8 @@ processor.run(
 );
 
 async function processOutboundEvents(ctx: ProcessorContext<Store>) {
-  let transfersToEthereum: TransferStatusToEthereum[] = [];
+  let transfersToEthereum: TransferStatusToEthereum[] = [],
+    forwardMessages: MessageProcessedOnPolkadot[] = [];
   for (let block of ctx.blocks) {
     let foreignAssetBurned = false;
     let messageForwarded: MessageProcessedOnPolkadot;
@@ -116,14 +117,14 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           let destinationAddress: Bytes;
 
           let messageId = rec.messageId.toString().toLowerCase();
-
-          let instruction0 = rec.message[0];
           if (rec.origin.interior.__kind == "X1") {
             let val = rec.origin.interior.value[0];
             if (val.__kind == "AccountId32") {
               senderAddress = val.id;
             }
           }
+
+          let instruction0 = rec.message[0];
           if (instruction0.__kind == "WithdrawAsset") {
             let asset = instruction0.value[0];
             if (asset.fun.__kind == "Fungible") {
@@ -170,7 +171,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         transfersToEthereum.push(transferToEthereum);
       }
       // Start from 3rd Parachain
-      if (messageForwarded! && messageForwarded.success) {
+      if (messageForwarded!) {
+        forwardMessages.push(messageForwarded);
         let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
           id: messageForwarded.messageId,
         });
@@ -188,6 +190,11 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
   if (transfersToEthereum.length > 0) {
     ctx.log.debug("saving transfer messages to ethereum");
     await ctx.store.save(transfersToEthereum);
+  }
+
+  if (forwardMessages.length > 0) {
+    ctx.log.debug("saving forward messages to ethereum");
+    await ctx.store.save(forwardMessages);
   }
 }
 

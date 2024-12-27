@@ -16,15 +16,14 @@ processor.run(
     stateSchema: "bridgehub_processor",
   }),
   async (ctx) => {
-    await processBridgeEvents(ctx);
+    await processInboundEvents(ctx);
+    await processOutboundEvents(ctx);
   }
 );
 
-async function processBridgeEvents(ctx: ProcessorContext<Store>) {
+async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let inboundMessages: InboundMessageReceivedOnBridgeHub[] = [],
-    outboundMessages: OutboundMessageAcceptedOnBridgeHub[] = [],
-    transfersToPolkadot: TransferStatusToPolkadot[] = [],
-    transfersToEthereum: TransferStatusToEthereum[] = [];
+    transfersToPolkadot: TransferStatusToPolkadot[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (event.name == events.ethereumInboundQueue.messageReceived.name) {
@@ -43,7 +42,6 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
           channelId: rec.channelId.toString(),
           nonce: Number(rec.nonce),
         });
-
         inboundMessages.push(message);
         let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
           id: message.messageId,
@@ -56,7 +54,24 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
           transfersToPolkadot.push(transfer);
         }
       }
+    }
+  }
+  if (inboundMessages.length > 0) {
+    ctx.log.debug("saving inbound messages");
+    await ctx.store.save(inboundMessages);
+  }
 
+  if (transfersToPolkadot.length > 0) {
+    ctx.log.debug("updating transfer messages");
+    await ctx.store.save(transfersToPolkadot);
+  }
+}
+
+async function processOutboundEvents(ctx: ProcessorContext<Store>) {
+  let outboundMessages: OutboundMessageAcceptedOnBridgeHub[] = [],
+    transfersToEthereum: TransferStatusToEthereum[] = [];
+  for (let block of ctx.blocks) {
+    for (let event of block.events) {
       if (event.name == events.ethereumOutboundQueue.messageAccepted.name) {
         let rec: { id: Bytes; nonce: bigint; channelId?: Bytes };
         if (events.ethereumOutboundQueue.messageAccepted.v1002000.is(event)) {
@@ -93,19 +108,10 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
       }
     }
   }
-  if (inboundMessages.length > 0) {
-    ctx.log.debug("saving inbound messages");
-    await ctx.store.save(inboundMessages);
-  }
 
   if (outboundMessages.length > 0) {
     ctx.log.debug("saving outbound messages");
     await ctx.store.save(outboundMessages);
-  }
-
-  if (transfersToPolkadot.length > 0) {
-    ctx.log.debug("updating transfer messages");
-    await ctx.store.save(transfersToPolkadot);
   }
 
   if (transfersToEthereum.length > 0) {
