@@ -38,22 +38,12 @@ const processToPolkadot = async (connection: DataSource) => {
     ],
   });
   for (let transfer of transfers) {
-    let processedMessage;
-    processedMessage = await connection.manager.findOneBy(
+    let processedMessage = await connection.manager.findOneBy(
       MessageProcessedOnPolkadot,
       {
         messageId: transfer.id,
-        paraId: Not(AssetHubParaId),
       }
     );
-    if (!processedMessage) {
-      processedMessage = await connection.manager.findOneBy(
-        MessageProcessedOnPolkadot,
-        {
-          messageId: transfer.id,
-        }
-      );
-    }
     if (processedMessage!) {
       if (processedMessage.success) {
         transfer.status = TransferStatusEnum.Processed;

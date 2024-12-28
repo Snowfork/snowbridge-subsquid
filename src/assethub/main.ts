@@ -165,6 +165,9 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         }
       }
     }
+    if (messageForwarded!) {
+      forwardMessages.push(messageForwarded);
+    }
     if (foreignAssetBurned) {
       // Start from AH
       if (transferToEthereum!) {
@@ -177,7 +180,6 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
       }
       // Start from 3rd Parachain
       if (messageForwarded!) {
-        forwardMessages.push(messageForwarded);
         let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
           id: messageForwarded.messageId,
         });
@@ -275,28 +277,24 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
 
     if (processedMessage!) {
       processedMessages.push(processedMessage);
+    }
+    if (foreignAssetIssued && processedMessage!) {
       let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
         id: processedMessage.messageId,
       });
       if (transfer!) {
-        if (!processedMessage.success) {
-          transfer.status = TransferStatusEnum.ProcessFailed;
+        if (transfer.destinationParaId == AssetHubParaId) {
+          // Terminated on AH
+          transfer.destinationBlockNumber = block.header.height;
+          transfer.status = TransferStatusEnum.Processed;
         } else {
-          if (foreignAssetIssued) {
-            if (transfer.destinationParaId == AssetHubParaId) {
-              // Terminated on AH
-              transfer.destinationBlockNumber = block.header.height;
-              transfer.status = TransferStatusEnum.Processed;
-            } else {
-              // Forward to 3rd Parachain
-              transfer.forwardedBlockNumber = block.header.height;
-              if (
-                transfer.status == TransferStatusEnum.Sent ||
-                transfer.status == TransferStatusEnum.Bridged
-              ) {
-                transfer.status = TransferStatusEnum.Forwarded;
-              }
-            }
+          // Forward to 3rd Parachain
+          transfer.forwardedBlockNumber = block.header.height;
+          if (
+            transfer.status == TransferStatusEnum.Sent ||
+            transfer.status == TransferStatusEnum.Bridged
+          ) {
+            transfer.status = TransferStatusEnum.Forwarded;
           }
         }
         transfersToPolkadot.push(transfer);
