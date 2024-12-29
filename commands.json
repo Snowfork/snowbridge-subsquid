@@ -24,6 +24,7 @@
     },
     "migration:apply": {
       "description": "Apply the DB migrations",
+      "deps": ["migration"],
       "cmd": ["squid-typeorm-migration", "apply"]
     },
     "migration:generate": {
@@ -36,7 +37,7 @@
       "cmd": ["npx", "--yes", "rimraf", "./db/migrations"]
     },
     "migration": {
-      "deps": ["build"],
+      "deps": ["clean", "codegen", "build", "migration:clean"],
       "cmd": ["squid-typeorm-migration", "generate"],
       "hidden": true
     },
@@ -50,7 +51,7 @@
     },
     "process:ethereum": {
       "description": "Load .env and start the squid processor",
-      "deps": ["build", "migration:apply"],
+      "deps": ["build"],
       "cmd": ["node", "--require=dotenv/config", "lib/ethereum/main.js"]
     },
     "generateMeta:bridgehub": {
@@ -68,7 +69,7 @@
     },
     "process:bridgehub": {
       "description": "Load .env and start the squid processor",
-      "deps": ["build", "migration:apply"],
+      "deps": ["build"],
       "cmd": ["node", "--require=dotenv/config", "lib/bridgehub/main.js"]
     },
     "generateMeta:assethub": {
@@ -86,12 +87,13 @@
     },
     "process:assethub": {
       "description": "Load .env and start the squid processor",
-      "deps": ["build", "migration:apply"],
+      "deps": ["build"],
       "cmd": ["node", "--require=dotenv/config", "lib/assethub/main.js"]
     },
     "postprocess": {
       "description": "Update status based on stored data",
-      "cmd": ["node", "--require=dotenv/config", "lib/postprocess/start.js"]
+      "deps": ["build"],
+      "cmd": ["node", "--require=dotenv/config", "lib/postprocess/cron.js"]
     },
     "generateMeta:parachain:moonbeam": {
       "description": "Generate metadata for moonbeam",

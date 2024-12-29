@@ -134,3 +134,22 @@ Basically transfer status should be resolved by these two queries.
 It is possible to extend `squid-graphql-server(1)` with custom
 [type-graphql](https://typegraphql.com) resolvers and to add request validation.
 For more details, consult [docs](https://docs.subsquid.io/graphql-api/).
+
+## Deploy to subsquid cloud
+
+Follow the guides in:
+
+- https://docs.sqd.dev/cloud/overview/
+
+- https://app.subsquid.io/squids/deploy
+
+
+Deploy to cloud with `sqd`
+
+```
+sqd deploy --org snowfork /home/ubuntu/projects/snowbridge-subsquid
+```
+
+### API endpoint
+
+https://snowfork.squids.live/snowbridge-subsquid@v1/api/graphql

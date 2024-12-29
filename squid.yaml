@@ -7,13 +7,11 @@ deploy:
   addons:
     postgres:
     rpc:
-      - eth-sepolia.http
-      - bridge-hub-westend.http
-      - asset-hub-westend.http
-  # migrate:
-  #   env:
-  #     FOO: bar
-  #   cmd: ["echo", "skip migrations!"]
+      - eth.http
+      - bridge-hub-polkadot.http
+      - asset-hub-polkadot.http
+  migrate:
+    cmd: ["sqd", "migration:apply"]
   processor:
     - name: ethereum-processor
       env:
@@ -21,18 +19,30 @@ deploy:
       cmd: ["sqd", "process:ethereum"]
     - name: bridgehub-processor
       env:
-        RPC_ETH_HTTP: "wss://bridge-hub-polkadot-rpc.dwellir.com"
+        RPC_BRIDGEHUB_POLKADOT: "wss://bridge-hub-polkadot-rpc.dwellir.com"
       cmd: ["sqd", "process:bridgehub"]
     - name: assethub-processor
       env:
-        RPC_ETH_HTTP: "wss://asset-hub-polkadot-rpc.dwellir.com"
+        RPC_ASSETHUB_POLKADOT: "wss://asset-hub-polkadot-rpc.dwellir.com"
       cmd: ["sqd", "process:assethub"]
+    - name: hydration-processor
+      env:
+        RPC_HYDRATION: "wss://hydration-rpc.n.dwellir.com"
+      cmd: ["sqd", "process:parachain:hydration"]
     - name: post-processor
-      cmd: ["sqd", "process:postprocess"]
+      cmd: ["sqd", "postprocess"]
   api:
     cmd: ["sqd", "serve:prod"]
-scale:
-  addons:
-    postgres:
-      storage: 100G
-      profile: medium
+# Cost 400$/mon    
+# scale:
+#   dedicated: true
+#   addons:
+#     postgres:
+#       storage: 100G
+#       profile: medium
+#   processor:
+#       profile: medium
+#   api:
+#     profile: large
+#     # load-balance three replicas
+#     replicas: 3
