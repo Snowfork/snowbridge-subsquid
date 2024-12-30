@@ -33,16 +33,15 @@ deploy:
       cmd: ["sqd", "postprocess"]
   api:
     cmd: ["sqd", "serve:prod"]
-# Cost 400$/mon    
-# scale:
-#   dedicated: true
-#   addons:
-#     postgres:
-#       storage: 100G
-#       profile: medium
-#   processor:
-#       profile: medium
-#   api:
-#     profile: large
-#     # load-balance three replicas
-#     replicas: 3
+scale:
+  dedicated: true
+  addons:
+    postgres:
+      storage: 100G
+      profile: medium
+  processor:
+    profile: medium
+  api:
+    profile: medium
+    # load-balance two replicas
+    replicas: 2
