@@ -203,7 +203,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
 
 async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let processedMessages: MessageProcessedOnPolkadot[] = [],
-    transfersFromEthereum: TransferStatusToPolkadot[] = [];
+    transfersToPolkadot: TransferStatusToPolkadot[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (
@@ -221,10 +221,11 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
         } else if (events.messageQueue.processingFailed.v2901.is(event)) {
           rec = events.messageQueue.processingFailed.v2901.decode(event);
         } else {
-          throw new Error("Unsupported spec");
+          ctx.log.error("Unsupported spec");
         }
         // Filter message from AH
         if (
+          rec! &&
           rec.origin.__kind == "Sibling" &&
           rec.origin.value == AssetHubParaId
         ) {
@@ -247,10 +248,18 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
               transfer.status = TransferStatusEnum.ProcessFailed;
             }
             transfer.destinationBlockNumber = block.header.height;
-            transfersFromEthereum.push(transfer);
+            transfersToPolkadot.push(transfer);
           }
         }
       }
     }
+  }
+  if (processedMessages.length > 0) {
+    ctx.log.debug("saving messageQueue processed messages");
+    await ctx.store.save(processedMessages);
+  }
+  if (transfersToPolkadot.length > 0) {
+    ctx.log.debug("saving transfer messages from ethereum to polkadot");
+    await ctx.store.save(transfersToPolkadot);
   }
 }
