@@ -32,7 +32,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
   let transfersToEthereum: TransferStatusToEthereum[] = [],
     forwardMessages: MessageProcessedOnPolkadot[] = [];
   for (let block of ctx.blocks) {
-    let foreignAssetBurned = false;
+    let foreignAssetBurned = false,
+      xcmpMessageSent = false;
     let messageForwarded: MessageProcessedOnPolkadot;
     let transferToEthereum: TransferStatusToEthereum;
     for (let event of block.events) {
@@ -70,6 +71,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             throw new Error("Unsupported spec");
           }
         }
+      } else if (event.name == events.xcmpQueue.xcmpMessageSent.name) {
+        xcmpMessageSent = true;
       } else if (event.name == events.messageQueue.processed.name) {
         let rec: {
           id: Bytes;
@@ -179,7 +182,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         }
       }
       // Start from 3rd Parachain
-      if (messageForwarded!) {
+      if (xcmpMessageSent && messageForwarded!) {
         let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
           id: messageForwarded.messageId,
         });
