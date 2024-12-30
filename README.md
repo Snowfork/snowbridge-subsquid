@@ -152,4 +152,4 @@ sqd deploy --org snowfork /home/ubuntu/projects/snowbridge-subsquid
 
 ### API endpoint
 
-https://snowfork.squids.live/snowbridge-subsquid@v1/api/graphql
+https://data.snowbridge.network/graphql

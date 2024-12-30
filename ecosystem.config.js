@@ -21,13 +21,18 @@ module.exports = {
       script: "./lib/parachains/hydration/main.js",
     },
     {
+      name: "moonbeam",
+      node_args: "--require=dotenv/config",
+      script: "./lib/parachains/moonbeam/main.js",
+    },
+    {
       name: "graphql",
       script: "./node_modules/.bin/squid-graphql-server",
     },
     {
       name: "postprocess",
       node_args: "--require=dotenv/config",
-      script: "./lib/postprocess/cron.js"
-    }
+      script: "./lib/postprocess/cron.js",
+    },
   ],
 };

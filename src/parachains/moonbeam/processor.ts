@@ -24,7 +24,7 @@ export const processor = new SubstrateBatchProcessor()
     rateLimit: 10,
   })
   .setBlockRange({
-    from: 8501140,
+    from: 7573113,
   })
   .addEvent({
     name: [
