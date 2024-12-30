@@ -110,7 +110,7 @@
     },
     "process:parachain:moonbeam": {
       "description": "Load .env and start the squid processor",
-      "deps": ["build", "migration:apply"],
+      "deps": ["build"],
       "cmd": [
         "node",
         "--require=dotenv/config",
@@ -132,7 +132,7 @@
     },
     "process:parachain:hydration": {
       "description": "Load .env and start the squid processor",
-      "deps": ["build", "migration:apply"],
+      "deps": ["build"],
       "cmd": [
         "node",
         "--require=dotenv/config",
