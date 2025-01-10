@@ -1,7 +1,6 @@
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 import {
   OutboundMessageAcceptedOnEthereum,
-  TokenSentOnEthereum,
   TransferStatusToPolkadot,
   InboundMessageDispatchedOnEthereum,
   TransferStatusToEthereum,
@@ -23,7 +22,7 @@ async function processOutboundEvents(ctx: Context) {
   let outboundMessages: OutboundMessageAcceptedOnEthereum[] = [],
     transfersToPolkadot: TransferStatusToPolkadot[] = [];
   for (let c of ctx.blocks) {
-    let tokenSent: TokenSentOnEthereum;
+    let tokenSent;
     let outboundMessageAccepted: OutboundMessageAcceptedOnEthereum;
     for (let log of c.logs) {
       if (
@@ -34,7 +33,7 @@ async function processOutboundEvents(ctx: Context) {
         if (log.topics[0] == gateway.events.TokenSent.topic) {
           let { token, sender, destinationChain, destinationAddress, amount } =
             gateway.events.TokenSent.decode(log);
-          tokenSent = new TokenSentOnEthereum({
+          tokenSent = {
             id: log.id,
             blockNumber: c.header.height,
             txHash: log.transactionHash,
@@ -44,7 +43,7 @@ async function processOutboundEvents(ctx: Context) {
             destinationParaId: destinationChain,
             destinationAddress: destinationAddress.data,
             amount: amount,
-          });
+          };
         } else if (
           log.topics[0] == gateway.events.OutboundMessageAccepted.topic
         ) {

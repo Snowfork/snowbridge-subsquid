@@ -1,5 +1,8 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_} from "@subsquid/typeorm-store"
 
+/**
+ * Transfers from Polkadot to Ethereum
+ */
 @Entity_()
 export class TransferStatusToEthereum {
     constructor(props?: Partial<TransferStatusToEthereum>) {
@@ -26,35 +29,33 @@ export class TransferStatusToEthereum {
     timestamp!: Date
 
     @Index_()
-    @StringColumn_({nullable: false})
-    tokenAddress!: string
-
-    @Index_()
-    @StringColumn_({nullable: false})
-    senderAddress!: string
-
-    @Index_()
-    @IntColumn_({nullable: false})
-    sourceParaId!: number
-
-    @Index_()
-    @StringColumn_({nullable: false})
-    destinationAddress!: string
-
-    @BigIntColumn_({nullable: false})
-    amount!: bigint
-
-    @Index_()
-    @StringColumn_({nullable: true})
-    channelId!: string | undefined | null
-
-    @Index_()
     @IntColumn_({nullable: true})
     nonce!: number | undefined | null
 
     @Index_()
     @StringColumn_({nullable: false})
     status!: string
+
+    @StringColumn_({nullable: true})
+    tokenAddress!: string | undefined | null
+
+    @StringColumn_({nullable: true})
+    tokenLocation!: string | undefined | null
+
+    @StringColumn_({nullable: true})
+    senderAddress!: string | undefined | null
+
+    @IntColumn_({nullable: true})
+    sourceParaId!: number | undefined | null
+
+    @StringColumn_({nullable: true})
+    destinationAddress!: string | undefined | null
+
+    @BigIntColumn_({nullable: true})
+    amount!: bigint | undefined | null
+
+    @StringColumn_({nullable: true})
+    channelId!: string | undefined | null
 
     @IntColumn_({nullable: true})
     forwardedBlockNumber!: number | undefined | null

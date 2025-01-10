@@ -1,5 +1,8 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, IntColumn as IntColumn_, Index as Index_, DateTimeColumn as DateTimeColumn_, StringColumn as StringColumn_, BooleanColumn as BooleanColumn_} from "@subsquid/typeorm-store"
 
+/**
+ * Message processed on polkadot chains
+ */
 @Entity_()
 export class MessageProcessedOnPolkadot {
     constructor(props?: Partial<MessageProcessedOnPolkadot>) {
