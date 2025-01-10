@@ -12,9 +12,7 @@ import {
   V4Instruction,
   V4Location,
   ProcessMessageError,
-  V3MultiLocation,
 } from "./types/v1002000";
-import { V4Location as V4Location1003004 } from "./types/v1003004";
 import { TransferStatusEnum, BridgeHubParaId, AssetHubParaId } from "../common";
 
 processor.run(
@@ -32,46 +30,11 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
   let transfersToEthereum: TransferStatusToEthereum[] = [],
     forwardMessages: MessageProcessedOnPolkadot[] = [];
   for (let block of ctx.blocks) {
-    let foreignAssetBurned = false,
-      xcmpMessageSent = false;
+    let xcmpMessageSent = false;
     let messageForwarded: MessageProcessedOnPolkadot;
     let transferToEthereum: TransferStatusToEthereum;
     for (let event of block.events) {
-      if (event.name == events.foreignAssets.burned.name) {
-        let rec: {
-          assetId: V3MultiLocation;
-        };
-        if (events.foreignAssets.burned.v1002000.is(event)) {
-          rec = events.foreignAssets.burned.v1002000.decode(event);
-          if (
-            rec.assetId.parents == 2 &&
-            rec.assetId.interior.__kind == "X2" &&
-            rec.assetId.interior.value[0].__kind == "GlobalConsensus" &&
-            rec.assetId.interior.value[0].value.__kind == "Ethereum" &&
-            rec.assetId.interior.value[1].__kind == "AccountKey20"
-          ) {
-            foreignAssetBurned = true;
-          }
-        } else if (events.foreignAssets.burned.v1003004.is(event)) {
-          let rec: {
-            assetId: V4Location1003004;
-          };
-          if (events.foreignAssets.burned.v1003004.is(event)) {
-            rec = events.foreignAssets.burned.v1003004.decode(event);
-            if (
-              rec.assetId.parents == 2 &&
-              rec.assetId.interior.__kind == "X2" &&
-              rec.assetId.interior.value[0].__kind == "GlobalConsensus" &&
-              rec.assetId.interior.value[0].value.__kind == "Ethereum" &&
-              rec.assetId.interior.value[1].__kind == "AccountKey20"
-            ) {
-              foreignAssetBurned = true;
-            }
-          } else {
-            throw new Error("Unsupported spec");
-          }
-        }
-      } else if (event.name == events.xcmpQueue.xcmpMessageSent.name) {
+      if (event.name == events.xcmpQueue.xcmpMessageSent.name) {
         xcmpMessageSent = true;
       } else if (event.name == events.messageQueue.processed.name) {
         let rec: {
@@ -114,10 +77,11 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           rec.destination.interior.value[0].__kind == "GlobalConsensus" &&
           rec.destination.interior.value[0].value.__kind == "Ethereum"
         ) {
-          let amount: bigint;
-          let senderAddress: Bytes;
-          let tokenAddress: Bytes;
-          let destinationAddress: Bytes;
+          let amount: bigint = BigInt(0);
+          let senderAddress: Bytes = "";
+          let tokenAddress: Bytes = "";
+          let tokenLocation: Bytes = "";
+          let destinationAddress: Bytes = "";
 
           let messageId = rec.messageId.toString().toLowerCase();
           if (rec.origin.interior.__kind == "X1") {
@@ -128,11 +92,20 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           }
 
           let instruction0 = rec.message[0];
-          if (instruction0.__kind == "WithdrawAsset") {
+          // WithdrawAsset for ENA and ReserveAssetDeposited for PNA
+          if (
+            instruction0.__kind == "WithdrawAsset" ||
+            instruction0.__kind == "ReserveAssetDeposited"
+          ) {
             let asset = instruction0.value[0];
+            tokenLocation = JSON.stringify(asset.id);
             if (asset.fun.__kind == "Fungible") {
               amount = asset.fun.value;
-              if (asset.id.interior.__kind == "X1") {
+              // For ENA extract the token address
+              if (
+                instruction0.__kind == "WithdrawAsset" &&
+                asset.id.interior.__kind == "X1"
+              ) {
                 let val = asset.id.interior.value[0];
                 if (val.__kind == "AccountKey20") {
                   tokenAddress = val.key;
@@ -158,11 +131,12 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             blockNumber: block.header.height,
             timestamp: new Date(block.header.timestamp!),
             messageId: messageId,
-            tokenAddress: tokenAddress!,
+            tokenAddress,
+            tokenLocation,
             sourceParaId: AssetHubParaId,
-            senderAddress: senderAddress!,
-            destinationAddress: destinationAddress!,
-            amount: amount!,
+            senderAddress,
+            destinationAddress,
+            amount,
             status: TransferStatusEnum.Sent,
           });
         }
@@ -171,28 +145,26 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     if (messageForwarded!) {
       forwardMessages.push(messageForwarded);
     }
-    if (foreignAssetBurned) {
-      // Start from AH
-      if (transferToEthereum!) {
-        let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
-          id: transferToEthereum.messageId,
-        });
-        if (!transfer) {
-          transfersToEthereum.push(transferToEthereum);
-        }
+    // Start from AH
+    if (transferToEthereum!) {
+      let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
+        id: transferToEthereum.messageId,
+      });
+      if (!transfer) {
+        transfersToEthereum.push(transferToEthereum);
       }
-      // Start from 3rd Parachain
-      if (xcmpMessageSent && messageForwarded!) {
-        let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
-          id: messageForwarded.messageId,
-        });
-        if (transfer!) {
-          transfer.forwardedBlockNumber = block.header.height;
-          if (transfer.status == TransferStatusEnum.Sent) {
-            transfer.status = TransferStatusEnum.Forwarded;
-          }
-          transfersToEthereum.push(transfer);
+    }
+    // Start from 3rd Parachain
+    if (xcmpMessageSent && messageForwarded!) {
+      let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
+        id: messageForwarded.messageId,
+      });
+      if (transfer!) {
+        transfer.forwardedBlockNumber = block.header.height;
+        if (transfer.status == TransferStatusEnum.Sent) {
+          transfer.status = TransferStatusEnum.Forwarded;
         }
+        transfersToEthereum.push(transfer);
       }
     }
   }
@@ -212,44 +184,9 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let transfersToPolkadot: TransferStatusToPolkadot[] = [],
     processedMessages: MessageProcessedOnPolkadot[] = [];
   for (let block of ctx.blocks) {
-    let foreignAssetIssued = false;
     let processedMessage: MessageProcessedOnPolkadot;
     for (let event of block.events) {
-      if (event.name == events.foreignAssets.issued.name) {
-        let rec: {
-          assetId: V3MultiLocation;
-        };
-        if (events.foreignAssets.issued.v1002000.is(event)) {
-          rec = events.foreignAssets.issued.v1002000.decode(event);
-          if (
-            rec.assetId.parents == 2 &&
-            rec.assetId.interior.__kind == "X2" &&
-            rec.assetId.interior.value[0].__kind == "GlobalConsensus" &&
-            rec.assetId.interior.value[0].value.__kind == "Ethereum" &&
-            rec.assetId.interior.value[1].__kind == "AccountKey20"
-          ) {
-            foreignAssetIssued = true;
-          }
-        } else if (events.foreignAssets.issued.v1003004.is(event)) {
-          let rec: {
-            assetId: V4Location1003004;
-          };
-          if (events.foreignAssets.issued.v1003004.is(event)) {
-            rec = events.foreignAssets.issued.v1003004.decode(event);
-            if (
-              rec.assetId.parents == 2 &&
-              rec.assetId.interior.__kind == "X2" &&
-              rec.assetId.interior.value[0].__kind == "GlobalConsensus" &&
-              rec.assetId.interior.value[0].value.__kind == "Ethereum" &&
-              rec.assetId.interior.value[1].__kind == "AccountKey20"
-            ) {
-              foreignAssetIssued = true;
-            }
-          } else {
-            throw new Error("Unsupported spec");
-          }
-        }
-      } else if (event.name == events.messageQueue.processed.name) {
+      if (event.name == events.messageQueue.processed.name) {
         let rec: {
           id: Bytes;
           origin: AggregateMessageOrigin;
@@ -261,7 +198,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
         } else {
           throw new Error("Unsupported spec");
         }
-        // Filter message from non system parachain
+        // Filter message from BH
         if (
           rec.origin.__kind == "Sibling" &&
           rec.origin.value == BridgeHubParaId
@@ -280,8 +217,6 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
 
     if (processedMessage!) {
       processedMessages.push(processedMessage);
-    }
-    if (foreignAssetIssued && processedMessage!) {
       let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
         id: processedMessage.messageId,
       });

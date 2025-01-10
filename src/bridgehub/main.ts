@@ -2,13 +2,15 @@ import { TypeormDatabase, Store } from "@subsquid/typeorm-store";
 import { processor, ProcessorContext } from "./processor";
 import {
   InboundMessageReceivedOnBridgeHub,
+  MessageProcessedOnPolkadot,
   OutboundMessageAcceptedOnBridgeHub,
   TransferStatusToEthereum,
   TransferStatusToPolkadot,
 } from "../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
-import { TransferStatusEnum } from "../common";
+import { AssetHubParaId, BridgeHubParaId, TransferStatusEnum } from "../common";
+import { AggregateMessageOrigin, ProcessMessageError } from "./types/v1002000";
 
 processor.run(
   new TypeormDatabase({
@@ -69,6 +71,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
 
 async function processOutboundEvents(ctx: ProcessorContext<Store>) {
   let outboundMessages: OutboundMessageAcceptedOnBridgeHub[] = [],
+    processedMessages: MessageProcessedOnPolkadot[] = [],
     transfersToEthereum: TransferStatusToEthereum[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
@@ -106,12 +109,45 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           transfersToEthereum.push(transfer);
         }
       }
+      if (event.name == events.messageQueue.processed.name) {
+        let rec: {
+          id: Bytes;
+          origin: AggregateMessageOrigin;
+          success?: boolean;
+          error?: ProcessMessageError;
+        };
+        if (events.messageQueue.processed.v1002000.is(event)) {
+          rec = events.messageQueue.processed.v1002000.decode(event);
+        } else {
+          throw new Error("Unsupported spec");
+        }
+        // Filter message from AH
+        if (
+          rec.origin.__kind == "Sibling" &&
+          rec.origin.value == AssetHubParaId
+        ) {
+          let processedMessage = new MessageProcessedOnPolkadot({
+            id: event.id,
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: rec.id.toString().toLowerCase(),
+            paraId: BridgeHubParaId,
+            success: rec.success,
+          });
+          processedMessages.push(processedMessage);
+        }
+      }
     }
   }
 
   if (outboundMessages.length > 0) {
     ctx.log.debug("saving outbound messages");
     await ctx.store.save(outboundMessages);
+  }
+
+  if (processedMessages.length > 0) {
+    ctx.log.debug("saving messageQueue processed messages");
+    await ctx.store.save(processedMessages);
   }
 
   if (transfersToEthereum.length > 0) {
