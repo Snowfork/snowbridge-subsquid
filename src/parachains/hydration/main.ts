@@ -16,8 +16,7 @@ import {
 import {
   TransferStatusEnum,
   AssetHubParaId,
-  MoonBeamParaId,
-  EthereumNativeAsset,
+  ToEthereumAsset,
   HydrationParaId,
 } from "../../common";
 
@@ -44,29 +43,43 @@ const isDestinationToAssetHub = (destination: V4Location): boolean => {
   return false;
 };
 
-const matchEthereumNativeAsset = (
+const matchToEthereumAsset = (
   instruction: V4Instruction
-): EthereumNativeAsset | undefined => {
-  if (instruction.__kind != "WithdrawAsset" || instruction.value.length < 2) {
-    return;
+): ToEthereumAsset | undefined => {
+  let ethereumAsset;
+  if (instruction.__kind == "WithdrawAsset" && instruction.value.length > 1) {
+    let asset = instruction.value[1];
+    if (asset.fun.__kind == "Fungible") {
+      let location = JSON.stringify(asset.id, (key, value) =>
+        typeof value === "bigint" ? value.toString() : value
+      );
+      let amount = asset.fun.value;
+      if (
+        asset.id.interior.__kind == "X2" &&
+        asset.id.interior.value[0].__kind == "GlobalConsensus" &&
+        asset.id.interior.value[0].value.__kind == "Ethereum" &&
+        asset.id.interior.value[1].__kind == "AccountKey20"
+      ) {
+        // ENA
+        ethereumAsset = {
+          address: asset.id.interior.value[1].key,
+          amount,
+          location,
+        };
+      } else {
+        // PNA
+        ethereumAsset = {
+          address: "",
+          amount,
+          location,
+        };
+      }
+    }
   }
-  let asset = instruction.value[1];
-  if (
-    asset.fun.__kind == "Fungible" &&
-    asset.id.interior.__kind == "X2" &&
-    asset.id.interior.value[0].__kind == "GlobalConsensus" &&
-    asset.id.interior.value[0].value.__kind == "Ethereum" &&
-    asset.id.interior.value[1].__kind == "AccountKey20"
-  ) {
-    return {
-      address: asset.id.interior.value[1].key,
-      amount: asset.fun.value,
-    };
-  }
-  return;
+  return ethereumAsset;
 };
 
-const matchReserveTransferToEthereum = (
+const matchReserveTransferENAToEthereum = (
   instruction: V4Instruction
 ): boolean => {
   if (
@@ -81,13 +94,25 @@ const matchReserveTransferToEthereum = (
   return false;
 };
 
+const matchReserveTransferPNAToEthereum = (
+  instruction: V4Instruction
+): boolean => {
+  if (
+    instruction.__kind == "DepositReserveAsset" &&
+    instruction.dest.parents == 2 &&
+    instruction.dest.interior.__kind == "X1" &&
+    instruction.dest.interior.value[0].__kind == "GlobalConsensus" &&
+    instruction.dest.interior.value[0].value.__kind == "Ethereum"
+  ) {
+    return true;
+  }
+  return false;
+};
+
 const matchEthereumBeneficiary = (instruction: V4Instruction): string => {
   if (
-    instruction.__kind == "InitiateReserveWithdraw" &&
-    instruction.reserve.parents == 2 &&
-    instruction.reserve.interior.__kind == "X1" &&
-    instruction.reserve.interior.value[0].__kind == "GlobalConsensus" &&
-    instruction.reserve.interior.value[0].value.__kind == "Ethereum" &&
+    (instruction.__kind == "InitiateReserveWithdraw" ||
+      instruction.__kind == "DepositReserveAsset") &&
     instruction.xcm.length >= 2 &&
     instruction.xcm[1].__kind == "DepositAsset" &&
     instruction.xcm[1].beneficiary.interior.__kind == "X1" &&
@@ -115,13 +140,15 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           throw new Error("Unsupported spec");
         }
         // Filter message which contains instructions:
-        // [WithdrawAsset,ClearOrigin,BuyExecution,SetAppendix,InitiateReserveWithdraw,SetTopic]
+        // ENA:[WithdrawAsset,ClearOrigin,BuyExecution,SetAppendix,InitiateReserveWithdraw,SetTopic]
+        // PNA:[WithdrawAsset,ClearOrigin,BuyExecution,SetAppendix,DepositReserveAsset,SetTopic]
         if (rec.message.length < 6) {
           continue;
         }
         let amount: bigint;
         let senderAddress: Bytes = "";
         let tokenAddress: Bytes = "";
+        let tokenLocation: Bytes = "";
         let destinationAddress: Bytes = "";
         let messageId: Bytes = "";
         // Filter message destination to AH
@@ -138,36 +165,38 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           }
         }
         if (!senderAddress) {
-          ctx.log.error("sender address not supported");
+          throw new Error("no sender address");
+        }
+
+        // Filter transfer PNA|ENA with destination to Ethereum
+        let instruction4 = rec.message[4];
+        let transferENAtoEthereum =
+          matchReserveTransferENAToEthereum(instruction4);
+        let transferPNAtoEthereum =
+          matchReserveTransferPNAToEthereum(instruction4);
+        if (!transferENAtoEthereum && !transferPNAtoEthereum) {
           continue;
         }
 
-        // Get tokenAddress and tokenAmount from WithdrawAsset
+        // Get tokenAddress and tokenAmount
         // Asset with index 0 is fee, asset with index 1 is the transferred asset
-        // Fiter for ENA
+        // For PNA the token address is not known beforehand, leave it empty for now
+        // may need to index tokenInfo from the register event for the mapping from tokenLocation<->foreignTokenId<->tokenAddress
         let instruction0 = rec.message[0];
-        let ethereumAsset = matchEthereumNativeAsset(instruction0);
+        let ethereumAsset = matchToEthereumAsset(instruction0);
         if (!ethereumAsset) {
-          continue;
+          throw new Error("to ethereum unkown token info");
         }
         tokenAddress = ethereumAsset.address;
+        tokenLocation = ethereumAsset.location;
         amount = ethereumAsset.amount;
-
-        // Filter the inner InitiateReserveWithdraw with destination to Ethereum
-        let instruction4 = rec.message[4];
-        let toEthereum = matchReserveTransferToEthereum(instruction4);
-        if (!toEthereum) {
-          ctx.log.error("no reserve transfer to ethereum");
-          continue;
-        }
 
         // Get beneficiary from the inner InitiateReserveWithdraw
         let ethreumBeneficiary = matchEthereumBeneficiary(instruction4);
-        if (!ethreumBeneficiary) {
-          ctx.log.error("no ethereum beneficiary");
-          continue;
-        }
         destinationAddress = ethreumBeneficiary;
+        if (!destinationAddress) {
+          throw new Error("no destination address");
+        }
 
         // Get messageId from SetTopic
         let instruction5 = rec.message[5];
@@ -175,8 +204,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           messageId = instruction5.value;
         }
         if (!messageId) {
-          ctx.log.error("no messageId");
-          continue;
+          throw new Error("no message id in SetTopic instruction");
         }
 
         let transferToEthereum = new TransferStatusToEthereum({
@@ -185,7 +213,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           blockNumber: block.header.height,
           timestamp: new Date(block.header.timestamp!),
           messageId: messageId!,
-          tokenAddress: tokenAddress!,
+          tokenAddress: tokenAddress,
+          tokenLocation: tokenLocation,
           sourceParaId: HydrationParaId,
           senderAddress: senderAddress!,
           destinationAddress: destinationAddress!,

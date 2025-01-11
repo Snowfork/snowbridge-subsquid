@@ -18,7 +18,8 @@ export const MoonBeamParaId = 2004;
 
 export const HydrationParaId = 2034;
 
-export interface EthereumNativeAsset {
+export interface ToEthereumAsset {
+  location: string;
   address: string;
   amount: bigint;
 }
