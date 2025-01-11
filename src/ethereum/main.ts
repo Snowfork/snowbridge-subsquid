@@ -6,6 +6,7 @@ import {
   TransferStatusToEthereum,
 } from "../model";
 import * as gateway from "./abi/Gateway";
+import * as pnaToken from "./abi/Token";
 import { processor, GATEWAY_ADDRESS } from "./processor";
 import { TransferStatusEnum } from "../common";
 import { Context } from "./processor";
@@ -109,6 +110,7 @@ async function processInboundEvents(ctx: Context) {
   for (let c of ctx.blocks) {
     let inboundMessage: InboundMessageDispatchedOnEthereum;
     let transferToEthreum: TransferStatusToEthereum | undefined;
+    let pnaTransfered;
     for (let log of c.logs) {
       if (
         log.address == GATEWAY_ADDRESS &&
@@ -128,24 +130,30 @@ async function processInboundEvents(ctx: Context) {
             success: success,
           });
           inboundMessages.push(inboundMessage);
-
-          transferToEthreum = await ctx.store.findOneBy(
-            TransferStatusToEthereum,
-            {
-              id: inboundMessage.messageId,
-            }
-          );
-          if (transferToEthreum!) {
-            transferToEthreum.channelId = inboundMessage.channelId;
-            transferToEthreum.destinationBlockNumber = c.header.height;
-            if (inboundMessage.success) {
-              transferToEthreum.status = TransferStatusEnum.Processed;
-            } else {
-              transferToEthreum.status = TransferStatusEnum.ProcessFailed;
-            }
-            transfersToEthereum.push(transferToEthreum);
-          }
         }
+      } else if (log.topics[0] == pnaToken.events.Transfer.topic) {
+        let { from, to, value } = pnaToken.events.Transfer.decode(log);
+        pnaTransfered = { from, to, value, address: "0x" };
+        pnaTransfered.address = log.address;
+      }
+    }
+    if (inboundMessage!) {
+      transferToEthreum = await ctx.store.findOneBy(TransferStatusToEthereum, {
+        id: inboundMessage.messageId,
+      });
+      if (transferToEthreum!) {
+        transferToEthreum.channelId = inboundMessage.channelId;
+        transferToEthreum.destinationBlockNumber = c.header.height;
+        // Mint PNA
+        if (pnaTransfered) {
+          transferToEthreum.tokenAddress = pnaTransfered.address;
+        }
+        if (inboundMessage.success) {
+          transferToEthreum.status = TransferStatusEnum.Processed;
+        } else {
+          transferToEthreum.status = TransferStatusEnum.ProcessFailed;
+        }
+        transfersToEthereum.push(transferToEthreum);
       }
     }
   }
