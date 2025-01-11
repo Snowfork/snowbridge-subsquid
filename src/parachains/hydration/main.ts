@@ -155,6 +155,17 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         if (!isDestinationToAssetHub(rec.destination)) {
           continue;
         }
+
+        // Filter transfer PNA|ENA with destination to Ethereum
+        let instruction4 = rec.message[4];
+        let transferENAtoEthereum =
+          matchReserveTransferENAToEthereum(instruction4);
+        let transferPNAtoEthereum =
+          matchReserveTransferPNAToEthereum(instruction4);
+        if (!transferENAtoEthereum && !transferPNAtoEthereum) {
+          continue;
+        }
+
         // Get sender address
         if (rec.origin.interior.__kind == "X1") {
           let val = rec.origin.interior.value[0];
@@ -167,17 +178,6 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         if (!senderAddress) {
           throw new Error("no sender address");
         }
-
-        // Filter transfer PNA|ENA with destination to Ethereum
-        let instruction4 = rec.message[4];
-        let transferENAtoEthereum =
-          matchReserveTransferENAToEthereum(instruction4);
-        let transferPNAtoEthereum =
-          matchReserveTransferPNAToEthereum(instruction4);
-        if (!transferENAtoEthereum && !transferPNAtoEthereum) {
-          continue;
-        }
-
         // Get tokenAddress and tokenAmount
         // Asset with index 0 is fee, asset with index 1 is the transferred asset
         // For PNA the token address is not known beforehand, leave it empty for now

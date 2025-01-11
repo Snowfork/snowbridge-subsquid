@@ -31,8 +31,8 @@ type MessageProcessedOnPolkadot @entity {
   blockNumber: Int! @index
   timestamp: DateTime! @index
   messageId: String! @index
-  paraId: Int! @index
-  success: Boolean! @index
+  paraId: Int
+  success: Boolean
 }
 
 """
@@ -58,7 +58,7 @@ type InboundMessageDispatchedOnEthereum @entity {
   messageId: String! @index
   channelId: String @index
   nonce: Int! @index
-  success: Boolean! @index
+  success: Boolean @index
 }
 
 """

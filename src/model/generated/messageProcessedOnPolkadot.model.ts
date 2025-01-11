@@ -24,11 +24,9 @@ export class MessageProcessedOnPolkadot {
     @StringColumn_({nullable: false})
     messageId!: string
 
-    @Index_()
-    @IntColumn_({nullable: false})
-    paraId!: number
+    @IntColumn_({nullable: true})
+    paraId!: number | undefined | null
 
-    @Index_()
-    @BooleanColumn_({nullable: false})
-    success!: boolean
+    @BooleanColumn_({nullable: true})
+    success!: boolean | undefined | null
 }

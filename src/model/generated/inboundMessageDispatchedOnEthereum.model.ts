@@ -37,6 +37,6 @@ export class InboundMessageDispatchedOnEthereum {
     nonce!: number
 
     @Index_()
-    @BooleanColumn_({nullable: false})
-    success!: boolean
+    @BooleanColumn_({nullable: true})
+    success!: boolean | undefined | null
 }
