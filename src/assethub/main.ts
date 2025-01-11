@@ -36,7 +36,10 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     for (let event of block.events) {
       if (event.name == events.xcmpQueue.xcmpMessageSent.name) {
         xcmpMessageSent = true;
-      } else if (event.name == events.messageQueue.processed.name) {
+      } else if (
+        event.name == events.messageQueue.processed.name ||
+        event.name == events.messageQueue.processingFailed.name
+      ) {
         let rec: {
           id: Bytes;
           origin: AggregateMessageOrigin;
@@ -45,6 +48,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         };
         if (events.messageQueue.processed.v1002000.is(event)) {
           rec = events.messageQueue.processed.v1002000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1002000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1002000.decode(event);
         } else {
           throw new Error("Unsupported spec");
         }
@@ -98,7 +103,9 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             instruction0.__kind == "ReserveAssetDeposited"
           ) {
             let asset = instruction0.value[0];
-            tokenLocation = JSON.stringify(asset.id);
+            tokenLocation = JSON.stringify(asset.id, (key, value) =>
+              typeof value === "bigint" ? value.toString() : value
+            );
             if (asset.fun.__kind == "Fungible") {
               amount = asset.fun.value;
               // For ENA extract the token address
@@ -186,7 +193,10 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
   for (let block of ctx.blocks) {
     let processedMessage: MessageProcessedOnPolkadot;
     for (let event of block.events) {
-      if (event.name == events.messageQueue.processed.name) {
+      if (
+        event.name == events.messageQueue.processed.name ||
+        event.name == events.messageQueue.processingFailed.name
+      ) {
         let rec: {
           id: Bytes;
           origin: AggregateMessageOrigin;
@@ -195,6 +205,8 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
         };
         if (events.messageQueue.processed.v1002000.is(event)) {
           rec = events.messageQueue.processed.v1002000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1002000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1002000.decode(event);
         } else {
           throw new Error("Unsupported spec");
         }

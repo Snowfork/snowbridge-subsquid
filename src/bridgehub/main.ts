@@ -109,7 +109,10 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           transfersToEthereum.push(transfer);
         }
       }
-      if (event.name == events.messageQueue.processed.name) {
+      if (
+        event.name == events.messageQueue.processed.name ||
+        event.name == events.messageQueue.processingFailed.name
+      ) {
         let rec: {
           id: Bytes;
           origin: AggregateMessageOrigin;
@@ -118,6 +121,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         };
         if (events.messageQueue.processed.v1002000.is(event)) {
           rec = events.messageQueue.processed.v1002000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1002000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1002000.decode(event);
         } else {
           throw new Error("Unsupported spec");
         }
