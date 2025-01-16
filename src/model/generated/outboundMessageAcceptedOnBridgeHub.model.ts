@@ -1,5 +1,8 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, IntColumn as IntColumn_, Index as Index_, DateTimeColumn as DateTimeColumn_, StringColumn as StringColumn_} from "@subsquid/typeorm-store"
 
+/**
+ * Outbound message sent on BridgeHub
+ */
 @Entity_()
 export class OutboundMessageAcceptedOnBridgeHub {
     constructor(props?: Partial<OutboundMessageAcceptedOnBridgeHub>) {

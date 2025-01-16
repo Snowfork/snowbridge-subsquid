@@ -1,15 +1,6 @@
-type TokenSentOnEthereum @entity {
-  id: ID!
-  txHash: String! @index
-  blockNumber: Int! @index
-  timestamp: DateTime! @index
-  tokenAddress: String! @index
-  senderAddress: String! @index
-  destinationParaId: Int! @index
-  destinationAddress: String! @index
-  amount: BigInt!
-}
-
+"""
+Outbound message sent on Ethereum
+"""
 type OutboundMessageAcceptedOnEthereum @entity {
   id: ID!
   txHash: String! @index
@@ -20,6 +11,9 @@ type OutboundMessageAcceptedOnEthereum @entity {
   nonce: Int! @index
 }
 
+"""
+Inbound message received on BridgeHub
+"""
 type InboundMessageReceivedOnBridgeHub @entity {
   id: ID!
   blockNumber: Int! @index
@@ -29,43 +23,21 @@ type InboundMessageReceivedOnBridgeHub @entity {
   nonce: Int! @index
 }
 
+"""
+Message processed on polkadot chains
+"""
 type MessageProcessedOnPolkadot @entity {
   id: ID!
   blockNumber: Int! @index
   timestamp: DateTime! @index
   messageId: String! @index
-  success: Boolean! @index
+  paraId: Int
+  success: Boolean
 }
 
-type TransferStatusToPolkadot @entity {
-  id: ID!
-  messageId: String! @index
-  txHash: String! @index
-  blockNumber: Int! @index
-  timestamp: DateTime! @index
-  tokenAddress: String! @index
-  senderAddress: String! @index
-  destinationParaId: Int! @index
-  destinationAddress: String! @index
-  amount: BigInt!
-  channelId: String @index
-  nonce: Int! @index
-  status: String! @index
-}
-
-type TokenSentOnPolkadot @entity {
-  id: ID!
-  messageId: String! @index
-  txHash: String! @index
-  blockNumber: Int! @index
-  timestamp: DateTime! @index
-  tokenAddress: String! @index
-  senderAddress: String! @index
-  sourceParaId: Int! @index
-  destinationAddress: String! @index
-  amount: BigInt!
-}
-
+"""
+Outbound message sent on BridgeHub
+"""
 type OutboundMessageAcceptedOnBridgeHub @entity {
   id: ID!
   blockNumber: Int! @index
@@ -75,6 +47,9 @@ type OutboundMessageAcceptedOnBridgeHub @entity {
   nonce: Int! @index
 }
 
+"""
+Inbound message dispatched on Ethereum
+"""
 type InboundMessageDispatchedOnEthereum @entity {
   id: ID!
   txHash: String! @index
@@ -83,21 +58,51 @@ type InboundMessageDispatchedOnEthereum @entity {
   messageId: String! @index
   channelId: String @index
   nonce: Int! @index
-  success: Boolean! @index
+  success: Boolean @index
 }
 
+"""
+Transfers from Ethereum to Polkadot
+"""
+type TransferStatusToPolkadot @entity {
+  id: ID!
+  messageId: String! @index
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  nonce: Int @index
+  status: String! @index
+  tokenAddress: String
+  tokenLocation: String
+  senderAddress: String
+  destinationParaId: Int
+  destinationAddress: String
+  amount: BigInt
+  channelId: String
+  forwardedBlockNumber: Int
+  bridgedBlockNumber: Int
+  destinationBlockNumber: Int
+}
+
+"""
+Transfers from Polkadot to Ethereum
+"""
 type TransferStatusToEthereum @entity {
   id: ID!
   messageId: String! @index
   txHash: String! @index
   blockNumber: Int! @index
   timestamp: DateTime! @index
-  tokenAddress: String! @index
-  senderAddress: String! @index
-  sourceParaId: Int! @index
-  destinationAddress: String! @index
-  amount: BigInt!
-  channelId: String @index
   nonce: Int @index
   status: String! @index
+  tokenAddress: String
+  tokenLocation: String
+  senderAddress: String
+  sourceParaId: Int
+  destinationAddress: String
+  amount: BigInt
+  channelId: String
+  forwardedBlockNumber: Int
+  bridgedBlockNumber: Int
+  destinationBlockNumber: Int
 }

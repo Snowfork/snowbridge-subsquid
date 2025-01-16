@@ -2,13 +2,15 @@ import { TypeormDatabase, Store } from "@subsquid/typeorm-store";
 import { processor, ProcessorContext } from "./processor";
 import {
   InboundMessageReceivedOnBridgeHub,
+  MessageProcessedOnPolkadot,
   OutboundMessageAcceptedOnBridgeHub,
   TransferStatusToEthereum,
   TransferStatusToPolkadot,
 } from "../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
-import { TransferStatusEnum } from "../common";
+import { AssetHubParaId, BridgeHubParaId, TransferStatusEnum } from "../common";
+import { AggregateMessageOrigin, ProcessMessageError } from "./types/v1002000";
 
 processor.run(
   new TypeormDatabase({
@@ -16,15 +18,14 @@ processor.run(
     stateSchema: "bridgehub_processor",
   }),
   async (ctx) => {
-    await processBridgeEvents(ctx);
+    await processInboundEvents(ctx);
+    await processOutboundEvents(ctx);
   }
 );
 
-async function processBridgeEvents(ctx: ProcessorContext<Store>) {
+async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let inboundMessages: InboundMessageReceivedOnBridgeHub[] = [],
-    outboundMessages: OutboundMessageAcceptedOnBridgeHub[] = [],
-    transfersToPolkadot: TransferStatusToPolkadot[] = [],
-    transfersToEthereum: TransferStatusToEthereum[] = [];
+    transfersToPolkadot: TransferStatusToPolkadot[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (event.name == events.ethereumInboundQueue.messageReceived.name) {
@@ -43,17 +44,37 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
           channelId: rec.channelId.toString(),
           nonce: Number(rec.nonce),
         });
-
         inboundMessages.push(message);
         let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
           id: message.messageId,
         });
         if (transfer!) {
-          transfer.status = TransferStatusEnum.InboundQueueReceived;
+          transfer.bridgedBlockNumber = block.header.height;
+          if (transfer.status == TransferStatusEnum.Sent) {
+            transfer.status = TransferStatusEnum.Bridged;
+          }
           transfersToPolkadot.push(transfer);
         }
       }
+    }
+  }
+  if (inboundMessages.length > 0) {
+    ctx.log.debug("saving inbound messages");
+    await ctx.store.save(inboundMessages);
+  }
 
+  if (transfersToPolkadot.length > 0) {
+    ctx.log.debug("updating transfer messages");
+    await ctx.store.save(transfersToPolkadot);
+  }
+}
+
+async function processOutboundEvents(ctx: ProcessorContext<Store>) {
+  let outboundMessages: OutboundMessageAcceptedOnBridgeHub[] = [],
+    processedMessages: MessageProcessedOnPolkadot[] = [],
+    transfersToEthereum: TransferStatusToEthereum[] = [];
+  for (let block of ctx.blocks) {
+    for (let event of block.events) {
       if (event.name == events.ethereumOutboundQueue.messageAccepted.name) {
         let rec: { id: Bytes; nonce: bigint; channelId?: Bytes };
         if (events.ethereumOutboundQueue.messageAccepted.v1002000.is(event)) {
@@ -68,7 +89,6 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
           timestamp: new Date(block.header.timestamp!),
           messageId: rec.id.toString().toLowerCase(),
           nonce: Number(rec.nonce),
-          // Todo: Wait for https://github.com/Snowfork/polkadot-sdk/pull/147 and re-index
           channelId: rec.channelId,
         });
         outboundMessages.push(message);
@@ -79,15 +99,50 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
         if (transfer!) {
           transfer.channelId = rec.channelId;
           transfer.nonce = Number(rec.nonce);
-          transfer.status = TransferStatusEnum.OutboundQueueReceived;
+          transfer.bridgedBlockNumber = block.header.height;
+          if (
+            transfer.status == TransferStatusEnum.Sent ||
+            transfer.status == TransferStatusEnum.Forwarded
+          ) {
+            transfer.status = TransferStatusEnum.Bridged;
+          }
           transfersToEthereum.push(transfer);
         }
       }
+      if (
+        event.name == events.messageQueue.processed.name ||
+        event.name == events.messageQueue.processingFailed.name
+      ) {
+        let rec: {
+          id: Bytes;
+          origin: AggregateMessageOrigin;
+          success?: boolean;
+          error?: ProcessMessageError;
+        };
+        if (events.messageQueue.processed.v1002000.is(event)) {
+          rec = events.messageQueue.processed.v1002000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1002000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1002000.decode(event);
+        } else {
+          throw new Error("Unsupported spec");
+        }
+        // Filter message from AH
+        if (
+          rec.origin.__kind == "Sibling" &&
+          rec.origin.value == AssetHubParaId
+        ) {
+          let processedMessage = new MessageProcessedOnPolkadot({
+            id: event.id,
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: rec.id.toString().toLowerCase(),
+            paraId: BridgeHubParaId,
+            success: rec.success,
+          });
+          processedMessages.push(processedMessage);
+        }
+      }
     }
-  }
-  if (inboundMessages.length > 0) {
-    ctx.log.debug("saving inbound messages");
-    await ctx.store.save(inboundMessages);
   }
 
   if (outboundMessages.length > 0) {
@@ -95,9 +150,9 @@ async function processBridgeEvents(ctx: ProcessorContext<Store>) {
     await ctx.store.save(outboundMessages);
   }
 
-  if (transfersToPolkadot.length > 0) {
-    ctx.log.debug("updating transfer messages");
-    await ctx.store.save(transfersToPolkadot);
+  if (processedMessages.length > 0) {
+    ctx.log.debug("saving messageQueue processed messages");
+    await ctx.store.save(processedMessages);
   }
 
   if (transfersToEthereum.length > 0) {

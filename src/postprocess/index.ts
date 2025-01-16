@@ -1,16 +1,14 @@
 import { createOrmConfig } from "@subsquid/typeorm-config";
-import { registerTsNodeIfRequired } from "@subsquid/util-internal-ts-node";
-import * as dotenv from "dotenv";
-import { DataSource } from "typeorm";
+import { DataSource, IsNull, Not } from "typeorm";
 import {
   TransferStatusToPolkadot,
   TransferStatusToEthereum,
-  InboundMessageReceivedOnBridgeHub,
-  OutboundMessageAcceptedOnBridgeHub,
   MessageProcessedOnPolkadot,
   InboundMessageDispatchedOnEthereum,
+  InboundMessageReceivedOnBridgeHub,
+  OutboundMessageAcceptedOnBridgeHub,
 } from "../model";
-import { TransferStatusEnum } from "../common";
+import { AssetHubParaId, TransferStatusEnum } from "../common";
 
 export const postProcess = async () => {
   let connection = new DataSource({
@@ -25,19 +23,26 @@ export const postProcess = async () => {
   await connection.initialize();
 
   try {
-    await processToPolkadot(connection);
-    await processToEthereum(connection);
+    await processToPolkadotStatus(connection);
+    await processToEthereumStatus(connection);
+    await processToPolkadotWithBridgedBlock(connection);
+    await processToEthereumWithBridgedBlock(connection);
+    await processToPolkadotWithForwardBlock(connection);
+    await processToEthereumWithForwardBlock(connection);
+    await processToPolkadotWithDestinationBlock(connection);
+    await processToEthereumWithDestinationBlock(connection);
   } finally {
     await connection.destroy().catch(() => null);
   }
 };
 
-const processToPolkadot = async (connection: DataSource) => {
+const processToPolkadotStatus = async (connection: DataSource) => {
   let updated: TransferStatusToPolkadot[] = [];
   let transfers = await connection.manager.find(TransferStatusToPolkadot, {
     where: [
       { status: TransferStatusEnum.Sent },
-      { status: TransferStatusEnum.InboundQueueReceived },
+      { status: TransferStatusEnum.Bridged },
+      { status: TransferStatusEnum.Forwarded },
     ],
   });
   for (let transfer of transfers) {
@@ -45,6 +50,7 @@ const processToPolkadot = async (connection: DataSource) => {
       MessageProcessedOnPolkadot,
       {
         messageId: transfer.id,
+        paraId: AssetHubParaId,
       }
     );
     if (processedMessage!) {
@@ -54,29 +60,19 @@ const processToPolkadot = async (connection: DataSource) => {
         transfer.status = TransferStatusEnum.ProcessFailed;
       }
       updated.push(transfer);
-    } else {
-      let inboundMessage = await connection.manager.findOneBy(
-        InboundMessageReceivedOnBridgeHub,
-        {
-          messageId: transfer.id,
-        }
-      );
-      if (inboundMessage!) {
-        transfer.status = TransferStatusEnum.InboundQueueReceived;
-        updated.push(transfer);
-      }
     }
   }
   await connection.manager.save(updated);
   console.log("To polkadot transfer status updated");
 };
 
-const processToEthereum = async (connection: DataSource) => {
+const processToEthereumStatus = async (connection: DataSource) => {
   let updated: TransferStatusToEthereum[] = [];
   let transfers = await connection.manager.find(TransferStatusToEthereum, {
     where: [
       { status: TransferStatusEnum.Sent },
-      { status: TransferStatusEnum.OutboundQueueReceived },
+      { status: TransferStatusEnum.Bridged },
+      { status: TransferStatusEnum.Forwarded },
     ],
   });
   for (let transfer of transfers) {
@@ -93,19 +89,152 @@ const processToEthereum = async (connection: DataSource) => {
         transfer.status = TransferStatusEnum.ProcessFailed;
       }
       updated.push(transfer);
-    } else {
-      let outboundMessage = await connection.manager.findOneBy(
-        OutboundMessageAcceptedOnBridgeHub,
-        {
-          messageId: transfer.id,
-        }
-      );
-      if (outboundMessage!) {
-        transfer.status = TransferStatusEnum.OutboundQueueReceived;
-        updated.push(transfer);
-      }
     }
   }
   await connection.manager.save(updated);
   console.log("To ethereum transfer status updated");
+};
+
+const processToPolkadotWithBridgedBlock = async (connection: DataSource) => {
+  let updated: TransferStatusToPolkadot[] = [];
+  let transfers = await connection.manager.find(TransferStatusToPolkadot, {
+    where: { bridgedBlockNumber: IsNull() },
+  });
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      InboundMessageReceivedOnBridgeHub,
+      {
+        messageId: transfer.id,
+      }
+    );
+    if (processedMessage!) {
+      transfer.bridgedBlockNumber = processedMessage.blockNumber;
+      updated.push(transfer);
+    }
+  }
+  await connection.manager.save(updated);
+  console.log("To polkadot transfer bridge block updated");
+};
+
+const processToEthereumWithBridgedBlock = async (connection: DataSource) => {
+  let updated: TransferStatusToEthereum[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+    where: { bridgedBlockNumber: IsNull() },
+  });
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      OutboundMessageAcceptedOnBridgeHub,
+      {
+        messageId: transfer.id,
+      }
+    );
+    if (processedMessage!) {
+      transfer.bridgedBlockNumber = processedMessage.blockNumber;
+      updated.push(transfer);
+    }
+  }
+  await connection.manager.save(updated);
+  console.log("To ethereum transfer bridge block updated");
+};
+
+const processToPolkadotWithForwardBlock = async (connection: DataSource) => {
+  let updated: TransferStatusToPolkadot[] = [];
+  let transfers = await connection.manager.find(TransferStatusToPolkadot, {
+    where: {
+      forwardedBlockNumber: IsNull(),
+      destinationParaId: Not(AssetHubParaId),
+    },
+  });
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      MessageProcessedOnPolkadot,
+      {
+        messageId: transfer.id,
+        paraId: AssetHubParaId,
+      }
+    );
+    if (processedMessage!) {
+      transfer.forwardedBlockNumber = processedMessage.blockNumber;
+      updated.push(transfer);
+    }
+  }
+  await connection.manager.save(updated);
+  console.log("To polkadot transfer forward block updated");
+};
+
+const processToEthereumWithForwardBlock = async (connection: DataSource) => {
+  let updated: TransferStatusToEthereum[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+    where: {
+      forwardedBlockNumber: IsNull(),
+      sourceParaId: Not(AssetHubParaId),
+    },
+  });
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      MessageProcessedOnPolkadot,
+      {
+        messageId: transfer.id,
+        paraId: AssetHubParaId,
+      }
+    );
+    if (processedMessage!) {
+      transfer.forwardedBlockNumber = processedMessage.blockNumber;
+      updated.push(transfer);
+    }
+  }
+  await connection.manager.save(updated);
+  console.log("To ethereum transfer forward block updated");
+};
+
+const processToPolkadotWithDestinationBlock = async (
+  connection: DataSource
+) => {
+  let updated: TransferStatusToPolkadot[] = [];
+  let transfers = await connection.manager.find(TransferStatusToPolkadot, {
+    where: {
+      destinationBlockNumber: IsNull(),
+      destinationParaId: AssetHubParaId,
+    },
+  });
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      MessageProcessedOnPolkadot,
+      {
+        messageId: transfer.id,
+        paraId: AssetHubParaId,
+      }
+    );
+    if (processedMessage!) {
+      transfer.destinationBlockNumber = processedMessage.blockNumber;
+      updated.push(transfer);
+    }
+  }
+  await connection.manager.save(updated);
+  console.log("To polkadot transfer destination block updated");
+};
+
+const processToEthereumWithDestinationBlock = async (
+  connection: DataSource
+) => {
+  let updated: TransferStatusToEthereum[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+    where: {
+      destinationBlockNumber: IsNull(),
+    },
+  });
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      InboundMessageDispatchedOnEthereum,
+      {
+        messageId: transfer.id,
+      }
+    );
+    if (processedMessage!) {
+      transfer.destinationBlockNumber = processedMessage.blockNumber;
+      updated.push(transfer);
+    }
+  }
+  await connection.manager.save(updated);
+  console.log("To ethereum transfer destination block updated");
 };

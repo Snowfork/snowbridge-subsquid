@@ -35,11 +35,29 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Launch process moonbeam",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["src/parachains/moonbeam/main.ts"],
+      "env": { "SQD_DEBUG": "*" }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch process hydration",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["src/parachains/hydration/main.ts"],
+      "env": { "SQD_DEBUG": "*" }
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "post process status",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
       // "args": ["src/postprocess/index.ts", "toPolkadot"],
-      "args": ["src/postprocess/index.ts", "toEthereum"],
+      "args": ["src/postprocess/start.ts"],
       "env": { "SQD_DEBUG": "*" }
     }
   ]

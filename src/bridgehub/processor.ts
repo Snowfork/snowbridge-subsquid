@@ -33,6 +33,8 @@ export const processor = new SubstrateBatchProcessor()
     name: [
       events.ethereumInboundQueue.messageReceived.name,
       events.ethereumOutboundQueue.messageAccepted.name,
+      events.messageQueue.processed.name,
+      events.messageQueue.processingFailed.name,
     ],
     extrinsic: true,
   })

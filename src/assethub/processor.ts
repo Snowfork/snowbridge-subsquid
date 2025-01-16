@@ -34,6 +34,9 @@ export const processor = new SubstrateBatchProcessor()
       events.messageQueue.processed.name,
       events.messageQueue.processingFailed.name,
       events.polkadotXcm.sent.name,
+      events.foreignAssets.burned.name,
+      events.foreignAssets.issued.name,
+      events.xcmpQueue.xcmpMessageSent.name,
     ],
     extrinsic: true,
   })

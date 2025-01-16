@@ -1,38 +1,40 @@
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 import {
   OutboundMessageAcceptedOnEthereum,
-  TokenSentOnEthereum,
   TransferStatusToPolkadot,
   InboundMessageDispatchedOnEthereum,
   TransferStatusToEthereum,
 } from "../model";
 import * as gateway from "./abi/Gateway";
+import * as pnaToken from "./abi/Token";
 import { processor, GATEWAY_ADDRESS } from "./processor";
 import { TransferStatusEnum } from "../common";
+import { Context } from "./processor";
 
 processor.run(
   new TypeormDatabase({ supportHotBlocks: true, stateSchema: "eth_processor" }),
   async (ctx) => {
-    let tokenSents: TokenSentOnEthereum[] = [],
-      outboundMessages: OutboundMessageAcceptedOnEthereum[] = [],
-      transfersToPolkadot: TransferStatusToPolkadot[] = [],
-      inboundMessages: InboundMessageDispatchedOnEthereum[] = [],
-      transfersToEthereum: TransferStatusToEthereum[] = [];
-    for (let c of ctx.blocks) {
-      let tokenSent: TokenSentOnEthereum;
-      let outboundMessageAccepted: OutboundMessageAcceptedOnEthereum;
-      for (let log of c.logs) {
-        if (
-          log.address !== GATEWAY_ADDRESS ||
-          (log.topics[0] !== gateway.events.TokenSent.topic &&
-            log.topics[0] !== gateway.events.OutboundMessageAccepted.topic &&
-            log.topics[0] !== gateway.events.InboundMessageDispatched.topic)
-        )
-          continue;
+    await processInboundEvents(ctx);
+    await processOutboundEvents(ctx);
+  }
+);
+
+async function processOutboundEvents(ctx: Context) {
+  let outboundMessages: OutboundMessageAcceptedOnEthereum[] = [],
+    transfersToPolkadot: TransferStatusToPolkadot[] = [];
+  for (let c of ctx.blocks) {
+    let tokenSent;
+    let outboundMessageAccepted: OutboundMessageAcceptedOnEthereum;
+    for (let log of c.logs) {
+      if (
+        log.address == GATEWAY_ADDRESS &&
+        (log.topics[0] == gateway.events.TokenSent.topic ||
+          log.topics[0] == gateway.events.OutboundMessageAccepted.topic)
+      ) {
         if (log.topics[0] == gateway.events.TokenSent.topic) {
           let { token, sender, destinationChain, destinationAddress, amount } =
             gateway.events.TokenSent.decode(log);
-          tokenSent = new TokenSentOnEthereum({
+          tokenSent = {
             id: log.id,
             blockNumber: c.header.height,
             txHash: log.transactionHash,
@@ -42,8 +44,7 @@ processor.run(
             destinationParaId: destinationChain,
             destinationAddress: destinationAddress.data,
             amount: amount,
-          });
-          tokenSents.push(tokenSent);
+          };
         } else if (
           log.topics[0] == gateway.events.OutboundMessageAccepted.topic
         ) {
@@ -58,44 +59,23 @@ processor.run(
             messageId: messageID.toString().toLowerCase(),
             nonce: Number(nonce),
           });
-          outboundMessages.push(outboundMessageAccepted);
-        } else if (
-          log.topics[0] == gateway.events.InboundMessageDispatched.topic
-        ) {
-          let { channelID, messageID, nonce, success } =
-            gateway.events.InboundMessageDispatched.decode(log);
-          let inboundMessage = new InboundMessageDispatchedOnEthereum({
-            id: log.id,
-            blockNumber: c.header.height,
-            txHash: log.transactionHash,
-            timestamp: new Date(c.header.timestamp),
-            channelId: channelID,
-            messageId: messageID.toString().toLowerCase(),
-            nonce: Number(nonce),
-            success: success,
-          });
-          inboundMessages.push(inboundMessage);
-
-          let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
-            id: inboundMessage.messageId,
-          });
-          if (transfer!) {
-            transfer.channelId = inboundMessage.channelId;
-            if (inboundMessage.success) {
-              transfer.status = TransferStatusEnum.Processed;
-            } else {
-              transfer.status = TransferStatusEnum.ProcessFailed;
-            }
-            transfersToEthereum.push(transfer);
-          }
         }
       }
-      // Merge OutboundMessageAccepted event with TokenSent event to generate the TransferStatusToPolkadot
-      if (
-        outboundMessageAccepted! &&
-        tokenSent! &&
-        tokenSent.txHash == outboundMessageAccepted.txHash
-      ) {
+    }
+    // Merge OutboundMessageAccepted event with TokenSent event to generate the TransferStatusToPolkadot
+    if (
+      outboundMessageAccepted! &&
+      tokenSent! &&
+      tokenSent.txHash == outboundMessageAccepted.txHash
+    ) {
+      outboundMessages.push(outboundMessageAccepted);
+      let transferToPolkadot = await ctx.store.findOneBy(
+        TransferStatusToPolkadot,
+        {
+          id: outboundMessageAccepted.messageId,
+        }
+      );
+      if (!transferToPolkadot) {
         transfersToPolkadot.push(
           new TransferStatusToPolkadot({
             id: outboundMessageAccepted.messageId,
@@ -115,20 +95,72 @@ processor.run(
         );
       }
     }
-    if (tokenSents.length > 0) {
-      await ctx.store.save(tokenSents);
+  }
+  if (outboundMessages.length > 0) {
+    await ctx.store.save(outboundMessages);
+  }
+  if (transfersToPolkadot.length > 0) {
+    await ctx.store.save(transfersToPolkadot);
+  }
+}
+
+async function processInboundEvents(ctx: Context) {
+  let inboundMessages: InboundMessageDispatchedOnEthereum[] = [],
+    transfersToEthereum: TransferStatusToEthereum[] = [];
+  for (let c of ctx.blocks) {
+    let inboundMessage: InboundMessageDispatchedOnEthereum;
+    let transferToEthreum: TransferStatusToEthereum | undefined;
+    let pnaTransfered;
+    for (let log of c.logs) {
+      if (
+        log.address == GATEWAY_ADDRESS &&
+        log.topics[0] == gateway.events.InboundMessageDispatched.topic
+      ) {
+        if (log.topics[0] == gateway.events.InboundMessageDispatched.topic) {
+          let { channelID, messageID, nonce, success } =
+            gateway.events.InboundMessageDispatched.decode(log);
+          inboundMessage = new InboundMessageDispatchedOnEthereum({
+            id: log.id,
+            blockNumber: c.header.height,
+            txHash: log.transactionHash,
+            timestamp: new Date(c.header.timestamp),
+            channelId: channelID,
+            messageId: messageID.toString().toLowerCase(),
+            nonce: Number(nonce),
+            success: success,
+          });
+          inboundMessages.push(inboundMessage);
+        }
+      } else if (log.topics[0] == pnaToken.events.Transfer.topic) {
+        let { from, to, value } = pnaToken.events.Transfer.decode(log);
+        pnaTransfered = { from, to, value, address: "0x" };
+        pnaTransfered.address = log.address;
+      }
     }
-    if (outboundMessages.length > 0) {
-      await ctx.store.save(outboundMessages);
-    }
-    if (transfersToPolkadot.length > 0) {
-      await ctx.store.save(transfersToPolkadot);
-    }
-    if (inboundMessages.length > 0) {
-      await ctx.store.save(inboundMessages);
-    }
-    if (transfersToEthereum.length > 0) {
-      await ctx.store.save(transfersToEthereum);
+    if (inboundMessage!) {
+      transferToEthreum = await ctx.store.findOneBy(TransferStatusToEthereum, {
+        id: inboundMessage.messageId,
+      });
+      if (transferToEthreum!) {
+        transferToEthreum.channelId = inboundMessage.channelId;
+        transferToEthreum.destinationBlockNumber = c.header.height;
+        // Mint PNA
+        if (pnaTransfered) {
+          transferToEthreum.tokenAddress = pnaTransfered.address;
+        }
+        if (inboundMessage.success) {
+          transferToEthreum.status = TransferStatusEnum.Processed;
+        } else {
+          transferToEthreum.status = TransferStatusEnum.ProcessFailed;
+        }
+        transfersToEthereum.push(transferToEthreum);
+      }
     }
   }
-);
+  if (inboundMessages.length > 0) {
+    await ctx.store.save(inboundMessages);
+  }
+  if (transfersToEthereum.length > 0) {
+    await ctx.store.save(transfersToEthereum);
+  }
+}

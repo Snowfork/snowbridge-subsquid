@@ -5,3 +5,6 @@ Dockerfile
 .git
 .github
 .idea
+data
+db
+.env

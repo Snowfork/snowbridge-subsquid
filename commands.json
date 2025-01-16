@@ -24,6 +24,7 @@
     },
     "migration:apply": {
       "description": "Apply the DB migrations",
+      "deps": ["migration"],
       "cmd": ["squid-typeorm-migration", "apply"]
     },
     "migration:generate": {
@@ -36,7 +37,7 @@
       "cmd": ["npx", "--yes", "rimraf", "./db/migrations"]
     },
     "migration": {
-      "deps": ["build"],
+      "deps": ["clean", "codegen", "build", "migration:clean"],
       "cmd": ["squid-typeorm-migration", "generate"],
       "hidden": true
     },
@@ -50,7 +51,7 @@
     },
     "process:ethereum": {
       "description": "Load .env and start the squid processor",
-      "deps": ["build", "migration:apply"],
+      "deps": ["build"],
       "cmd": ["node", "--require=dotenv/config", "lib/ethereum/main.js"]
     },
     "generateMeta:bridgehub": {
@@ -68,7 +69,7 @@
     },
     "process:bridgehub": {
       "description": "Load .env and start the squid processor",
-      "deps": ["build", "migration:apply"],
+      "deps": ["build"],
       "cmd": ["node", "--require=dotenv/config", "lib/bridgehub/main.js"]
     },
     "generateMeta:assethub": {
@@ -86,15 +87,56 @@
     },
     "process:assethub": {
       "description": "Load .env and start the squid processor",
-      "deps": ["build", "migration:apply"],
+      "deps": ["build"],
       "cmd": ["node", "--require=dotenv/config", "lib/assethub/main.js"]
     },
     "postprocess": {
       "description": "Update status based on stored data",
+      "deps": ["build"],
+      "cmd": ["node", "--require=dotenv/config", "lib/postprocess/cron.js"]
+    },
+    "generateMeta:parachain:moonbeam": {
+      "description": "Generate metadata for moonbeam",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://moonbeam.ibp.network",
+        "--out=moonbeam-versions.jsonl"
+      ]
+    },
+    "typegen:parachain:moonbeam": {
+      "description": "Generate data access classes for an moombeam metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-moonbeam.json"]
+    },
+    "process:parachain:moonbeam": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build"],
       "cmd": [
         "node",
         "--require=dotenv/config",
-        "lib/postprocess/start.js"
+        "lib/parachains/moonbeam/main.js"
+      ]
+    },
+    "generateMeta:parachain:hydration": {
+      "description": "Generate metadata for hydration",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://hydration.dotters.network",
+        "--out=hydration-versions.jsonl"
+      ]
+    },
+    "typegen:parachain:hydration": {
+      "description": "Generate data access classes for hydration metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-hydration.json"]
+    },
+    "process:parachain:hydration": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build"],
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/parachains/hydration/main.js"
       ]
     },
     "serve": {
@@ -129,10 +171,6 @@
       "description": "Bump @subsquid packages to the latest versions",
       "deps": ["check-updates"],
       "cmd": ["npm", "i", "-f"]
-    },
-    "open": {
-      "description": "Open a local browser window",
-      "cmd": ["npx", "--yes", "opener"]
     },
     "prettier": {
       "cmd": ["npx", "prettier", ".", "--write"]

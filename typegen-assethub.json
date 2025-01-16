@@ -23,6 +23,12 @@
       ],
       "storage": [],
       "constants": []
+    },
+    "XcmpQueue": {
+      "events": ["XcmpMessageSent"],
+      "calls": [],
+      "storage": [],
+      "constants": []
     }
   }
 }

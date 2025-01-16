@@ -16,13 +16,18 @@ module.exports = {
       script: "./lib/assethub/main.js",
     },
     {
+      name: "hydration",
+      node_args: "--require=dotenv/config",
+      script: "./lib/parachains/hydration/main.js",
+    },
+    {
       name: "graphql",
       script: "./node_modules/.bin/squid-graphql-server",
     },
     {
       name: "postprocess",
       node_args: "--require=dotenv/config",
-      script: "./lib/postprocess/cron.js"
-    }
+      script: "./lib/postprocess/cron.js",
+    },
   ],
 };

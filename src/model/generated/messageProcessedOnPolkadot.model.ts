@@ -1,5 +1,8 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, IntColumn as IntColumn_, Index as Index_, DateTimeColumn as DateTimeColumn_, StringColumn as StringColumn_, BooleanColumn as BooleanColumn_} from "@subsquid/typeorm-store"
 
+/**
+ * Message processed on polkadot chains
+ */
 @Entity_()
 export class MessageProcessedOnPolkadot {
     constructor(props?: Partial<MessageProcessedOnPolkadot>) {
@@ -21,7 +24,9 @@ export class MessageProcessedOnPolkadot {
     @StringColumn_({nullable: false})
     messageId!: string
 
-    @Index_()
-    @BooleanColumn_({nullable: false})
-    success!: boolean
+    @IntColumn_({nullable: true})
+    paraId!: number | undefined | null
+
+    @BooleanColumn_({nullable: true})
+    success!: boolean | undefined | null
 }

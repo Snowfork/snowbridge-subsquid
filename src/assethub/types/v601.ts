@@ -1190,3 +1190,5 @@ export const V1MultiLocation: sts.Type<V1MultiLocation> = sts.struct(() => {
         interior: V1Junctions,
     }
 })
+
+export const H256 = sts.bytes()
