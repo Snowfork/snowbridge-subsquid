@@ -1,53 +1,29 @@
 import {sts, Block, Bytes, Option, Result, EventType, RuntimeCtx} from '../support'
-import * as v1002000 from '../v1002000'
-import * as v1003000 from '../v1003000'
+import * as v1016000 from '../v1016000'
 
 export const processingFailed =  {
     name: 'MessageQueue.ProcessingFailed',
     /**
      * Message discarded due to an error in the `MessageProcessor` (usually a format error).
      */
-    v1002000: new EventType(
+    v1016000: new EventType(
         'MessageQueue.ProcessingFailed',
         sts.struct({
             /**
              * The `blake2_256` hash of the message.
              */
-            id: v1002000.H256,
+            id: v1016000.H256,
             /**
              * The queue of the message.
              */
-            origin: v1002000.AggregateMessageOrigin,
+            origin: v1016000.AggregateMessageOrigin,
             /**
              * The error that occurred.
              * 
              * This error is pretty opaque. More fine-grained errors need to be emitted as events
              * by the `MessageProcessor`.
              */
-            error: v1002000.ProcessMessageError,
-        })
-    ),
-    /**
-     * Message discarded due to an error in the `MessageProcessor` (usually a format error).
-     */
-    v1003000: new EventType(
-        'MessageQueue.ProcessingFailed',
-        sts.struct({
-            /**
-             * The `blake2_256` hash of the message.
-             */
-            id: v1003000.H256,
-            /**
-             * The queue of the message.
-             */
-            origin: v1003000.AggregateMessageOrigin,
-            /**
-             * The error that occurred.
-             * 
-             * This error is pretty opaque. More fine-grained errors need to be emitted as events
-             * by the `MessageProcessor`.
-             */
-            error: v1003000.ProcessMessageError,
+            error: v1016000.ProcessMessageError,
         })
     ),
 }
@@ -57,21 +33,21 @@ export const processed =  {
     /**
      * Message is processed.
      */
-    v1002000: new EventType(
+    v1016000: new EventType(
         'MessageQueue.Processed',
         sts.struct({
             /**
              * The `blake2_256` hash of the message.
              */
-            id: v1002000.H256,
+            id: v1016000.H256,
             /**
              * The queue of the message.
              */
-            origin: v1002000.AggregateMessageOrigin,
+            origin: v1016000.AggregateMessageOrigin,
             /**
              * How much weight was used to process the message.
              */
-            weightUsed: v1002000.Weight,
+            weightUsed: v1016000.Weight,
             /**
              * Whether the message was processed.
              * 

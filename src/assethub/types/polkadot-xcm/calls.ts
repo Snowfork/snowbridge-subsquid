@@ -1,101 +1,88 @@
 import {sts, Block, Bytes, Option, Result, CallType, RuntimeCtx} from '../support'
-import * as v601 from '../v601'
-import * as v9370 from '../v9370'
-import * as v9420 from '../v9420'
-import * as v1002000 from '../v1002000'
+import * as v1016000 from '../v1016000'
+import * as v1016005 from '../v1016005'
 
 export const reserveTransferAssets =  {
     name: 'PolkadotXcm.reserve_transfer_assets',
     /**
-     * Transfer some assets from the local chain to the sovereign account of a destination chain and forward
-     * a notification XCM.
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve.
      * 
-     * Fee payment on the destination side is made from the first asset listed in the `assets` vector and
-     * fee-weight is calculated locally and thus remote weights are assumed to be equal to
-     * local weights.
+     * `assets` must have same reserve location and may not be teleportable to `dest`.
+     *  - `assets` have local reserve: transfer assets to sovereign account of destination
+     *    chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     *    assets to `beneficiary`.
+     *  - `assets` have destination reserve: burn local assets and forward a notification to
+     *    `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     *    deposit them to `beneficiary`.
+     *  - `assets` have remote reserve: burn local assets, forward XCM to reserve chain to move
+     *    reserves from this chain's SA to `dest` chain's SA, and forward another XCM to `dest`
+     *    to mint and deposit reserve-based assets to `beneficiary`.
      * 
-     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
-     * - `dest`: Destination context for the assets. Will typically be `X2(Parent, Parachain(..))` to send
-     *   from parachain to parachain, or `X1(Parachain(..))` to send from relay to parachain.
-     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will generally be
-     *   an `AccountId32` value.
-     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the fee on the
-     *   `dest` side.
-     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
-     *   fees.
-     */
-    v601: new CallType(
-        'PolkadotXcm.reserve_transfer_assets',
-        sts.struct({
-            dest: v601.VersionedMultiLocation,
-            beneficiary: v601.VersionedMultiLocation,
-            assets: v601.VersionedMultiAssets,
-            feeAssetItem: sts.number(),
-        })
-    ),
-    /**
-     * Transfer some assets from the local chain to the sovereign account of a destination
-     * chain and forward a notification XCM.
+     * **This function is deprecated: Use `limited_reserve_transfer_assets` instead.**
      * 
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item`. The weight limit for fees is not provided and thus is unlimited,
      * with all fees taken as needed from the asset.
      * 
      * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
-     * - `dest`: Destination context for the assets. Will typically be `X2(Parent, Parachain(..))` to send
-     *   from parachain to parachain, or `X1(Parachain(..))` to send from relay to parachain.
-     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will generally be
-     *   an `AccountId32` value.
-     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the fee on the
-     *   `dest` side.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     *   Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     *   relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     *   generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     *   fee on the `dest` (and possibly reserve) chains.
      * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
      *   fees.
      */
-    v9370: new CallType(
+    v1016000: new CallType(
         'PolkadotXcm.reserve_transfer_assets',
         sts.struct({
-            dest: v9370.VersionedMultiLocation,
-            beneficiary: v9370.VersionedMultiLocation,
-            assets: v9370.VersionedMultiAssets,
+            dest: v1016000.VersionedLocation,
+            beneficiary: v1016000.VersionedLocation,
+            assets: v1016000.VersionedAssets,
             feeAssetItem: sts.number(),
         })
     ),
     /**
-     * Transfer some assets from the local chain to the sovereign account of a destination
-     * chain and forward a notification XCM.
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve.
+     * 
+     * `assets` must have same reserve location and may not be teleportable to `dest`.
+     *  - `assets` have local reserve: transfer assets to sovereign account of destination
+     *    chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     *    assets to `beneficiary`.
+     *  - `assets` have destination reserve: burn local assets and forward a notification to
+     *    `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     *    deposit them to `beneficiary`.
+     *  - `assets` have remote reserve: burn local assets, forward XCM to reserve chain to move
+     *    reserves from this chain's SA to `dest` chain's SA, and forward another XCM to `dest`
+     *    to mint and deposit reserve-based assets to `beneficiary`.
+     * 
+     * **This function is deprecated: Use `limited_reserve_transfer_assets` instead.**
      * 
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item`. The weight limit for fees is not provided and thus is unlimited,
      * with all fees taken as needed from the asset.
      * 
      * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
-     * - `dest`: Destination context for the assets. Will typically be `X2(Parent, Parachain(..))` to send
-     *   from parachain to parachain, or `X1(Parachain(..))` to send from relay to parachain.
-     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will generally be
-     *   an `AccountId32` value.
-     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the fee on the
-     *   `dest` side.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     *   Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     *   relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     *   generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     *   fee on the `dest` (and possibly reserve) chains.
      * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
      *   fees.
      */
-    v9420: new CallType(
+    v1016005: new CallType(
         'PolkadotXcm.reserve_transfer_assets',
         sts.struct({
-            dest: v9420.VersionedMultiLocation,
-            beneficiary: v9420.VersionedMultiLocation,
-            assets: v9420.VersionedMultiAssets,
-            feeAssetItem: sts.number(),
-        })
-    ),
-    /**
-     * See [`Pallet::reserve_transfer_assets`].
-     */
-    v1002000: new CallType(
-        'PolkadotXcm.reserve_transfer_assets',
-        sts.struct({
-            dest: v1002000.VersionedLocation,
-            beneficiary: v1002000.VersionedLocation,
-            assets: v1002000.VersionedAssets,
+            dest: v1016005.VersionedLocation,
+            beneficiary: v1016005.VersionedLocation,
+            assets: v1016005.VersionedAssets,
             feeAssetItem: sts.number(),
         })
     ),
@@ -104,103 +91,87 @@ export const reserveTransferAssets =  {
 export const limitedReserveTransferAssets =  {
     name: 'PolkadotXcm.limited_reserve_transfer_assets',
     /**
-     * Transfer some assets from the local chain to the sovereign account of a destination chain and forward
-     * a notification XCM.
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve.
      * 
-     * Fee payment on the destination side is made from the first asset listed in the `assets` vector.
-     * 
-     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
-     * - `dest`: Destination context for the assets. Will typically be `X2(Parent, Parachain(..))` to send
-     *   from parachain to parachain, or `X1(Parachain(..))` to send from relay to parachain.
-     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will generally be
-     *   an `AccountId32` value.
-     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the fee on the
-     *   `dest` side.
-     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
-     *   fees.
-     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
-     */
-    v601: new CallType(
-        'PolkadotXcm.limited_reserve_transfer_assets',
-        sts.struct({
-            dest: v601.VersionedMultiLocation,
-            beneficiary: v601.VersionedMultiLocation,
-            assets: v601.VersionedMultiAssets,
-            feeAssetItem: sts.number(),
-            weightLimit: v601.V2WeightLimit,
-        })
-    ),
-    /**
-     * Transfer some assets from the local chain to the sovereign account of a destination
-     * chain and forward a notification XCM.
+     * `assets` must have same reserve location and may not be teleportable to `dest`.
+     *  - `assets` have local reserve: transfer assets to sovereign account of destination
+     *    chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     *    assets to `beneficiary`.
+     *  - `assets` have destination reserve: burn local assets and forward a notification to
+     *    `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     *    deposit them to `beneficiary`.
+     *  - `assets` have remote reserve: burn local assets, forward XCM to reserve chain to move
+     *    reserves from this chain's SA to `dest` chain's SA, and forward another XCM to `dest`
+     *    to mint and deposit reserve-based assets to `beneficiary`.
      * 
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-     * is needed than `weight_limit`, then the operation will fail and the assets send may be
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
      * at risk.
      * 
      * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
-     * - `dest`: Destination context for the assets. Will typically be `X2(Parent, Parachain(..))` to send
-     *   from parachain to parachain, or `X1(Parachain(..))` to send from relay to parachain.
-     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will generally be
-     *   an `AccountId32` value.
-     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the fee on the
-     *   `dest` side.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     *   Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     *   relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     *   generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     *   fee on the `dest` (and possibly reserve) chains.
      * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
      *   fees.
      * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
      */
-    v9370: new CallType(
+    v1016000: new CallType(
         'PolkadotXcm.limited_reserve_transfer_assets',
         sts.struct({
-            dest: v9370.VersionedMultiLocation,
-            beneficiary: v9370.VersionedMultiLocation,
-            assets: v9370.VersionedMultiAssets,
+            dest: v1016000.VersionedLocation,
+            beneficiary: v1016000.VersionedLocation,
+            assets: v1016000.VersionedAssets,
             feeAssetItem: sts.number(),
-            weightLimit: v9370.V2WeightLimit,
+            weightLimit: v1016000.V3WeightLimit,
         })
     ),
     /**
-     * Transfer some assets from the local chain to the sovereign account of a destination
-     * chain and forward a notification XCM.
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve.
+     * 
+     * `assets` must have same reserve location and may not be teleportable to `dest`.
+     *  - `assets` have local reserve: transfer assets to sovereign account of destination
+     *    chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     *    assets to `beneficiary`.
+     *  - `assets` have destination reserve: burn local assets and forward a notification to
+     *    `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     *    deposit them to `beneficiary`.
+     *  - `assets` have remote reserve: burn local assets, forward XCM to reserve chain to move
+     *    reserves from this chain's SA to `dest` chain's SA, and forward another XCM to `dest`
+     *    to mint and deposit reserve-based assets to `beneficiary`.
      * 
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-     * is needed than `weight_limit`, then the operation will fail and the assets send may be
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
      * at risk.
      * 
      * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
-     * - `dest`: Destination context for the assets. Will typically be `X2(Parent, Parachain(..))` to send
-     *   from parachain to parachain, or `X1(Parachain(..))` to send from relay to parachain.
-     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will generally be
-     *   an `AccountId32` value.
-     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the fee on the
-     *   `dest` side.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     *   Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     *   relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     *   generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     *   fee on the `dest` (and possibly reserve) chains.
      * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
      *   fees.
      * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
      */
-    v9420: new CallType(
+    v1016005: new CallType(
         'PolkadotXcm.limited_reserve_transfer_assets',
         sts.struct({
-            dest: v9420.VersionedMultiLocation,
-            beneficiary: v9420.VersionedMultiLocation,
-            assets: v9420.VersionedMultiAssets,
+            dest: v1016005.VersionedLocation,
+            beneficiary: v1016005.VersionedLocation,
+            assets: v1016005.VersionedAssets,
             feeAssetItem: sts.number(),
-            weightLimit: v9420.V3WeightLimit,
-        })
-    ),
-    /**
-     * See [`Pallet::limited_reserve_transfer_assets`].
-     */
-    v1002000: new CallType(
-        'PolkadotXcm.limited_reserve_transfer_assets',
-        sts.struct({
-            dest: v1002000.VersionedLocation,
-            beneficiary: v1002000.VersionedLocation,
-            assets: v1002000.VersionedAssets,
-            feeAssetItem: sts.number(),
-            weightLimit: v1002000.V3WeightLimit,
+            weightLimit: v1016005.V3WeightLimit,
         })
     ),
 }
@@ -208,16 +179,93 @@ export const limitedReserveTransferAssets =  {
 export const transferAssets =  {
     name: 'PolkadotXcm.transfer_assets',
     /**
-     * See [`Pallet::transfer_assets`].
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve, or through teleports.
+     * 
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
+     * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
+     * operation will fail and the sent assets may be at risk.
+     * 
+     * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
+     * to `dest`, no limitations imposed on `fees`.
+     *  - for local reserve: transfer assets to sovereign account of destination chain and
+     *    forward a notification XCM to `dest` to mint and deposit reserve-based assets to
+     *    `beneficiary`.
+     *  - for destination reserve: burn local assets and forward a notification to `dest` chain
+     *    to withdraw the reserve assets from this chain's sovereign account and deposit them
+     *    to `beneficiary`.
+     *  - for remote reserve: burn local assets, forward XCM to reserve chain to move reserves
+     *    from this chain's SA to `dest` chain's SA, and forward another XCM to `dest` to mint
+     *    and deposit reserve-based assets to `beneficiary`.
+     *  - for teleports: burn local assets and forward XCM to `dest` chain to mint/teleport
+     *    assets and deposit them to `beneficiary`.
+     * 
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `X2(Parent,
+     *   Parachain(..))` to send from parachain to parachain, or `X1(Parachain(..))` to send
+     *   from relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     *   generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     *   fee on the `dest` (and possibly reserve) chains.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     *   fees.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
      */
-    v1002000: new CallType(
+    v1016000: new CallType(
         'PolkadotXcm.transfer_assets',
         sts.struct({
-            dest: v1002000.VersionedLocation,
-            beneficiary: v1002000.VersionedLocation,
-            assets: v1002000.VersionedAssets,
+            dest: v1016000.VersionedLocation,
+            beneficiary: v1016000.VersionedLocation,
+            assets: v1016000.VersionedAssets,
             feeAssetItem: sts.number(),
-            weightLimit: v1002000.V3WeightLimit,
+            weightLimit: v1016000.V3WeightLimit,
+        })
+    ),
+    /**
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve, or through teleports.
+     * 
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
+     * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
+     * operation will fail and the sent assets may be at risk.
+     * 
+     * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
+     * to `dest`, no limitations imposed on `fees`.
+     *  - for local reserve: transfer assets to sovereign account of destination chain and
+     *    forward a notification XCM to `dest` to mint and deposit reserve-based assets to
+     *    `beneficiary`.
+     *  - for destination reserve: burn local assets and forward a notification to `dest` chain
+     *    to withdraw the reserve assets from this chain's sovereign account and deposit them
+     *    to `beneficiary`.
+     *  - for remote reserve: burn local assets, forward XCM to reserve chain to move reserves
+     *    from this chain's SA to `dest` chain's SA, and forward another XCM to `dest` to mint
+     *    and deposit reserve-based assets to `beneficiary`.
+     *  - for teleports: burn local assets and forward XCM to `dest` chain to mint/teleport
+     *    assets and deposit them to `beneficiary`.
+     * 
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `X2(Parent,
+     *   Parachain(..))` to send from parachain to parachain, or `X1(Parachain(..))` to send
+     *   from relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     *   generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     *   fee on the `dest` (and possibly reserve) chains.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     *   fees.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
+     */
+    v1016005: new CallType(
+        'PolkadotXcm.transfer_assets',
+        sts.struct({
+            dest: v1016005.VersionedLocation,
+            beneficiary: v1016005.VersionedLocation,
+            assets: v1016005.VersionedAssets,
+            feeAssetItem: sts.number(),
+            weightLimit: v1016005.V3WeightLimit,
         })
     ),
 }

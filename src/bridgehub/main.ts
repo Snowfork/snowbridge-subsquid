@@ -10,7 +10,7 @@ import {
 import { events } from "./types";
 import { Bytes } from "./types/support";
 import { AssetHubParaId, BridgeHubParaId, TransferStatusEnum } from "../common";
-import { AggregateMessageOrigin, ProcessMessageError } from "./types/v1002000";
+import { AggregateMessageOrigin, ProcessMessageError } from "./types/v1016000";
 
 processor.run(
   new TypeormDatabase({
@@ -30,9 +30,9 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
     for (let event of block.events) {
       if (event.name == events.ethereumInboundQueue.messageReceived.name) {
         let rec: { messageId: Bytes; channelId: Bytes; nonce: bigint };
-        if (events.ethereumInboundQueue.messageReceived.v1002000.is(event)) {
+        if (events.ethereumInboundQueue.messageReceived.v1016000.is(event)) {
           rec =
-            events.ethereumInboundQueue.messageReceived.v1002000.decode(event);
+            events.ethereumInboundQueue.messageReceived.v1016000.decode(event);
         } else {
           throw new Error("Unsupported spec");
         }
@@ -77,9 +77,9 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     for (let event of block.events) {
       if (event.name == events.ethereumOutboundQueue.messageAccepted.name) {
         let rec: { id: Bytes; nonce: bigint; channelId?: Bytes };
-        if (events.ethereumOutboundQueue.messageAccepted.v1002000.is(event)) {
+        if (events.ethereumOutboundQueue.messageAccepted.v1016000.is(event)) {
           rec =
-            events.ethereumOutboundQueue.messageAccepted.v1002000.decode(event);
+            events.ethereumOutboundQueue.messageAccepted.v1016000.decode(event);
         } else {
           throw new Error("Unsupported spec");
         }
@@ -119,10 +119,10 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           success?: boolean;
           error?: ProcessMessageError;
         };
-        if (events.messageQueue.processed.v1002000.is(event)) {
-          rec = events.messageQueue.processed.v1002000.decode(event);
-        } else if (events.messageQueue.processingFailed.v1002000.is(event)) {
-          rec = events.messageQueue.processingFailed.v1002000.decode(event);
+        if (events.messageQueue.processed.v1016000.is(event)) {
+          rec = events.messageQueue.processed.v1016000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1016000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1016000.decode(event);
         } else {
           throw new Error("Unsupported spec");
         }

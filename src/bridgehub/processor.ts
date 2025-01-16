@@ -14,7 +14,7 @@ import { events } from "./types";
 export const processor = new SubstrateBatchProcessor()
   // Lookup archive by the network name in Subsquid registry
   // See https://docs.subsquid.io/substrate-indexing/supported-networks/
-  .setGateway("https://v2.archive.subsquid.io/network/bridge-hub-polkadot")
+  .setGateway("https://v2.archive.subsquid.io/network/bridge-hub-westend")
   // Chain RPC endpoint is required on Substrate for metadata and real-time updates
   .setRpcEndpoint({
     // Set via .env for local runs or via secrets when deploying to Subsquid Cloud
@@ -27,7 +27,7 @@ export const processor = new SubstrateBatchProcessor()
     rateLimit: 10,
   })
   .setBlockRange({
-    from: 2776300,
+    from: 5379418,
   })
   .addEvent({
     name: [

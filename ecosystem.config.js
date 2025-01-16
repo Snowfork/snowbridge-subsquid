@@ -1,31 +1,26 @@
 module.exports = {
   apps: [
     {
-      name: "ethereum",
+      name: "sepolia-ethereum",
       node_args: "--require=dotenv/config",
       script: "./lib/ethereum/main.js",
     },
     {
-      name: "bridgehub",
+      name: "westend-bridgehub",
       node_args: "--require=dotenv/config",
       script: "./lib/bridgehub/main.js",
     },
     {
-      name: "assethub",
+      name: "westend-assethub",
       node_args: "--require=dotenv/config",
       script: "./lib/assethub/main.js",
     },
     {
-      name: "hydration",
-      node_args: "--require=dotenv/config",
-      script: "./lib/parachains/hydration/main.js",
-    },
-    {
-      name: "graphql",
+      name: "westend-graphql",
       script: "./node_modules/.bin/squid-graphql-server",
     },
     {
-      name: "postprocess",
+      name: "westend-postprocess",
       node_args: "--require=dotenv/config",
       script: "./lib/postprocess/cron.js",
     },

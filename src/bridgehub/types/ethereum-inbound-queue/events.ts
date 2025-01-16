@@ -1,18 +1,18 @@
 import {sts, Block, Bytes, Option, Result, EventType, RuntimeCtx} from '../support'
-import * as v1002000 from '../v1002000'
+import * as v1016000 from '../v1016000'
 
 export const messageReceived =  {
     name: 'EthereumInboundQueue.MessageReceived',
     /**
      * A message was received from Ethereum
      */
-    v1002000: new EventType(
+    v1016000: new EventType(
         'EthereumInboundQueue.MessageReceived',
         sts.struct({
             /**
              * The message channel
              */
-            channelId: v1002000.ChannelId,
+            channelId: v1016000.ChannelId,
             /**
              * The message nonce
              */

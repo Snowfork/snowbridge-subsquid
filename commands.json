@@ -59,8 +59,9 @@
       "cmd": [
         "npx",
         "squid-substrate-metadata-explorer",
-        "--rpc=wss://bridge-hub-polkadot-rpc.dwellir.com",
-        "--out=bridgehub-versions.jsonl"
+        "--rpc=wss://bridge-hub-westend-rpc.dwellir.com",
+        "--out=bridgehub-versions.jsonl",
+        "--fromBlock=5379418"
       ]
     },
     "typegen:bridgehub": {
@@ -77,8 +78,9 @@
       "cmd": [
         "npx",
         "squid-substrate-metadata-explorer",
-        "--rpc=wss://asset-hub-polkadot-rpc.dwellir.com",
-        "--out=assethub-versions.jsonl"
+        "--rpc=wss://asset-hub-westend-rpc.dwellir.com",
+        "--out=assethub-versions.jsonl",
+        "--fromBlock=9102742"
       ]
     },
     "typegen:assethub": {
@@ -94,50 +96,6 @@
       "description": "Update status based on stored data",
       "deps": ["build"],
       "cmd": ["node", "--require=dotenv/config", "lib/postprocess/cron.js"]
-    },
-    "generateMeta:parachain:moonbeam": {
-      "description": "Generate metadata for moonbeam",
-      "cmd": [
-        "npx",
-        "squid-substrate-metadata-explorer",
-        "--rpc=wss://moonbeam.ibp.network",
-        "--out=moonbeam-versions.jsonl"
-      ]
-    },
-    "typegen:parachain:moonbeam": {
-      "description": "Generate data access classes for an moombeam metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen-moonbeam.json"]
-    },
-    "process:parachain:moonbeam": {
-      "description": "Load .env and start the squid processor",
-      "deps": ["build"],
-      "cmd": [
-        "node",
-        "--require=dotenv/config",
-        "lib/parachains/moonbeam/main.js"
-      ]
-    },
-    "generateMeta:parachain:hydration": {
-      "description": "Generate metadata for hydration",
-      "cmd": [
-        "npx",
-        "squid-substrate-metadata-explorer",
-        "--rpc=wss://hydration.dotters.network",
-        "--out=hydration-versions.jsonl"
-      ]
-    },
-    "typegen:parachain:hydration": {
-      "description": "Generate data access classes for hydration metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen-hydration.json"]
-    },
-    "process:parachain:hydration": {
-      "description": "Load .env and start the squid processor",
-      "deps": ["build"],
-      "cmd": [
-        "node",
-        "--require=dotenv/config",
-        "lib/parachains/hydration/main.js"
-      ]
     },
     "serve": {
       "description": "Start the GraphQL API server",
