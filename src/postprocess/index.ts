@@ -27,7 +27,8 @@ export const postProcess = async () => {
   await connection.initialize();
 
   try {
-    await processToPolkadot(connection);
+    await processToPolkadotOnBridgeHub(connection);
+    await processToPolkadotOnAssetHub(connection);
     await processToEthereumForwardOnAssetHub(connection);
     await processToEthereumOnBridgeHubMessageQueue(connection);
     await processToEthereumOnBridgeHubOutboundQueue(connection);
@@ -37,13 +38,17 @@ export const postProcess = async () => {
   }
 };
 
-const processToPolkadot = async (connection: DataSource) => {
+const processToPolkadotOnBridgeHub = async (connection: DataSource) => {
   let updated: TransferStatusToPolkadot[] = [];
   let transfers = await connection.manager.find(TransferStatusToPolkadot, {
-    where: [{ status: TransferStatusEnum.Pending }],
+    relations: {
+      toBridgeHubInboundQueue: true,
+    },
+    where: {
+      toBridgeHubInboundQueue: IsNull(),
+    },
   });
   for (let transfer of transfers) {
-    let changed = false;
     let inboundMessage = await connection.manager.findOneBy(
       InboundMessageReceivedOnBridgeHub,
       {
@@ -52,9 +57,27 @@ const processToPolkadot = async (connection: DataSource) => {
     );
     if (inboundMessage!) {
       transfer.toBridgeHubInboundQueue = inboundMessage;
-      changed = true;
+      updated.push(transfer);
     }
-    // Before Patch#2409 when transfer processed on AH, treat it as succeed
+  }
+  if (updated.length) {
+    await connection.manager.save(updated);
+    console.log("To polkadot transfer on BH updated");
+  }
+};
+
+// Before Patch#2409 when transfer processed on AH, treat it as succeed
+const processToPolkadotOnAssetHub = async (connection: DataSource) => {
+  let updated: TransferStatusToPolkadot[] = [];
+  let transfers = await connection.manager.find(TransferStatusToPolkadot, {
+    relations: {
+      toAssetHubMessageQueue: true,
+    },
+    where: {
+      toAssetHubMessageQueue: IsNull(),
+    },
+  });
+  for (let transfer of transfers) {
     let processedMessage = await connection.manager.findOneBy(
       MessageProcessedOnPolkadot,
       {
@@ -72,15 +95,12 @@ const processToPolkadot = async (connection: DataSource) => {
       } else {
         transfer.status = TransferStatusEnum.Failed;
       }
-      changed = true;
-    }
-    if (changed) {
       updated.push(transfer);
     }
   }
   if (updated.length) {
     await connection.manager.save(updated);
-    console.log("To polkadot transfer updated");
+    console.log("To polkadot transfer on AH updated");
   }
 };
 
