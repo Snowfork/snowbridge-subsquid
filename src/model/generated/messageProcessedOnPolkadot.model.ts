@@ -29,4 +29,7 @@ export class MessageProcessedOnPolkadot {
 
     @BooleanColumn_({nullable: true})
     success!: boolean | undefined | null
+
+    @StringColumn_({nullable: true})
+    eventId!: string | undefined | null
 }

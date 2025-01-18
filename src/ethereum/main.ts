@@ -90,7 +90,7 @@ async function processOutboundEvents(ctx: Context) {
             destinationParaId: tokenSent.destinationParaId,
             destinationAddress: tokenSent.destinationAddress,
             amount: tokenSent.amount,
-            status: TransferStatusEnum.Sent,
+            status: TransferStatusEnum.Pending,
           })
         );
       }
@@ -143,15 +143,15 @@ async function processInboundEvents(ctx: Context) {
       });
       if (transferToEthreum!) {
         transferToEthreum.channelId = inboundMessage.channelId;
-        transferToEthreum.destinationBlockNumber = c.header.height;
+        transferToEthreum.toDestination = inboundMessage;
         // Mint PNA
         if (pnaTransfered) {
           transferToEthreum.tokenAddress = pnaTransfered.address;
         }
         if (inboundMessage.success) {
-          transferToEthreum.status = TransferStatusEnum.Processed;
+          transferToEthreum.status = TransferStatusEnum.Complete;
         } else {
-          transferToEthreum.status = TransferStatusEnum.ProcessFailed;
+          transferToEthreum.status = TransferStatusEnum.Failed;
         }
         transfersToEthereum.push(transferToEthreum);
       }

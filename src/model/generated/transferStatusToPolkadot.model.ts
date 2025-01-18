@@ -1,4 +1,6 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_} from "@subsquid/typeorm-store"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
+import {InboundMessageReceivedOnBridgeHub} from "./inboundMessageReceivedOnBridgeHub.model"
+import {MessageProcessedOnPolkadot} from "./messageProcessedOnPolkadot.model"
 
 /**
  * Transfers from Ethereum to Polkadot
@@ -33,8 +35,8 @@ export class TransferStatusToPolkadot {
     nonce!: number | undefined | null
 
     @Index_()
-    @StringColumn_({nullable: false})
-    status!: string
+    @IntColumn_({nullable: true})
+    status!: number | undefined | null
 
     @StringColumn_({nullable: true})
     tokenAddress!: string | undefined | null
@@ -57,12 +59,15 @@ export class TransferStatusToPolkadot {
     @StringColumn_({nullable: true})
     channelId!: string | undefined | null
 
-    @IntColumn_({nullable: true})
-    forwardedBlockNumber!: number | undefined | null
+    @Index_()
+    @ManyToOne_(() => InboundMessageReceivedOnBridgeHub, {nullable: true})
+    toBridgeHubInboundQueue!: InboundMessageReceivedOnBridgeHub | undefined | null
 
-    @IntColumn_({nullable: true})
-    bridgedBlockNumber!: number | undefined | null
+    @Index_()
+    @ManyToOne_(() => MessageProcessedOnPolkadot, {nullable: true})
+    toAssetHubMessageQueue!: MessageProcessedOnPolkadot | undefined | null
 
-    @IntColumn_({nullable: true})
-    destinationBlockNumber!: number | undefined | null
+    @Index_()
+    @ManyToOne_(() => MessageProcessedOnPolkadot, {nullable: true})
+    toDestination!: MessageProcessedOnPolkadot | undefined | null
 }

@@ -16,11 +16,13 @@ Inbound message received on BridgeHub
 """
 type InboundMessageReceivedOnBridgeHub @entity {
   id: ID!
+  txHash: String! @index
   blockNumber: Int! @index
   timestamp: DateTime! @index
   messageId: String! @index
-  channelId: String! @index
+  channelId: String @index
   nonce: Int! @index
+  eventId: String
 }
 
 """
@@ -33,6 +35,7 @@ type MessageProcessedOnPolkadot @entity {
   messageId: String! @index
   paraId: Int
   success: Boolean
+  eventId: String
 }
 
 """
@@ -45,6 +48,7 @@ type OutboundMessageAcceptedOnBridgeHub @entity {
   messageId: String! @index
   channelId: String @index
   nonce: Int! @index
+  eventId: String
 }
 
 """
@@ -71,7 +75,7 @@ type TransferStatusToPolkadot @entity {
   blockNumber: Int! @index
   timestamp: DateTime! @index
   nonce: Int @index
-  status: String! @index
+  status: Int @index
   tokenAddress: String
   tokenLocation: String
   senderAddress: String
@@ -79,9 +83,9 @@ type TransferStatusToPolkadot @entity {
   destinationAddress: String
   amount: BigInt
   channelId: String
-  forwardedBlockNumber: Int
-  bridgedBlockNumber: Int
-  destinationBlockNumber: Int
+  toBridgeHubInboundQueue: InboundMessageReceivedOnBridgeHub
+  toAssetHubMessageQueue: MessageProcessedOnPolkadot
+  toDestination: MessageProcessedOnPolkadot
 }
 
 """
@@ -94,7 +98,7 @@ type TransferStatusToEthereum @entity {
   blockNumber: Int! @index
   timestamp: DateTime! @index
   nonce: Int @index
-  status: String! @index
+  status: Int @index
   tokenAddress: String
   tokenLocation: String
   senderAddress: String
@@ -102,7 +106,8 @@ type TransferStatusToEthereum @entity {
   destinationAddress: String
   amount: BigInt
   channelId: String
-  forwardedBlockNumber: Int
-  bridgedBlockNumber: Int
-  destinationBlockNumber: Int
+  toAssetHubMessageQueue: MessageProcessedOnPolkadot
+  toBridgeHubMessageQueue: MessageProcessedOnPolkadot
+  toBridgeHubOutboundQueue: OutboundMessageAcceptedOnBridgeHub
+  toDestination: InboundMessageDispatchedOnEthereum
 }

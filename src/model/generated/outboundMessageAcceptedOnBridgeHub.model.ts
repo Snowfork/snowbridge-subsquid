@@ -31,4 +31,7 @@ export class OutboundMessageAcceptedOnBridgeHub {
     @Index_()
     @IntColumn_({nullable: false})
     nonce!: number
+
+    @StringColumn_({nullable: true})
+    eventId!: string | undefined | null
 }
