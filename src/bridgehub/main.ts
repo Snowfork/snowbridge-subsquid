@@ -56,6 +56,8 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           id: message.messageId,
         });
         if (transfer!) {
+          transfer.channelId = message.channelId;
+          transfer.nonce = message.nonce;
           transfer.toBridgeHubInboundQueue = message;
           transfersToPolkadot.push(transfer);
         }

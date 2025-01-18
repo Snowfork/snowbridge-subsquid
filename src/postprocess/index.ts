@@ -41,19 +41,16 @@ const processToPolkadot = async (connection: DataSource) => {
   });
   for (let transfer of transfers) {
     let changed = false;
-    if (!transfer.toBridgeHubInboundQueue) {
-      let inboundMessage = await connection.manager.findOneBy(
-        InboundMessageReceivedOnBridgeHub,
-        {
-          messageId: transfer.id,
-        }
-      );
-      if (inboundMessage!) {
-        transfer.toBridgeHubInboundQueue = inboundMessage;
-        changed = true;
+    let inboundMessage = await connection.manager.findOneBy(
+      InboundMessageReceivedOnBridgeHub,
+      {
+        messageId: transfer.id,
       }
+    );
+    if (inboundMessage!) {
+      transfer.toBridgeHubInboundQueue = inboundMessage;
+      changed = true;
     }
-
     // Before Patch#2409 when transfer processed on AH, treat it as succeed
     let processedMessage = await connection.manager.findOneBy(
       MessageProcessedOnPolkadot,
@@ -92,10 +89,7 @@ const processToEthereum = async (connection: DataSource) => {
   for (let transfer of transfers) {
     let changed = false;
     // Update toAssetHubMessageQueue
-    if (
-      transfer.sourceParaId != AssetHubParaId &&
-      !transfer.toAssetHubMessageQueue
-    ) {
+    if (transfer.sourceParaId != AssetHubParaId) {
       let processedMessage = await connection.manager.findOneBy(
         MessageProcessedOnPolkadot,
         {
@@ -112,35 +106,32 @@ const processToEthereum = async (connection: DataSource) => {
       }
     }
     // Update toBridgeHubMessageQueue
-    if (!transfer.toBridgeHubMessageQueue) {
-      let bridgeHubId = forwardedTopicId(transfer.id);
-      let processedMessage = await connection.manager.findOneBy(
-        MessageProcessedOnPolkadot,
-        {
-          messageId: bridgeHubId,
-        }
-      );
-      if (processedMessage!) {
-        if (processedMessage.success) {
-          transfer.toBridgeHubMessageQueue = processedMessage;
-        } else {
-          transfer.status = TransferStatusEnum.Failed;
-        }
-        changed = true;
+    let bridgeHubId = forwardedTopicId(transfer.id);
+    let processedMessage = await connection.manager.findOneBy(
+      MessageProcessedOnPolkadot,
+      {
+        messageId: bridgeHubId,
       }
+    );
+    if (processedMessage!) {
+      if (processedMessage.success) {
+        transfer.toBridgeHubMessageQueue = processedMessage;
+      } else {
+        transfer.status = TransferStatusEnum.Failed;
+      }
+      changed = true;
     }
     // Update toBridgeHubOutboundQueue
-    if (!transfer.toBridgeHubOutboundQueue) {
-      let outboundAccepted = await connection.manager.findOneBy(
-        OutboundMessageAcceptedOnBridgeHub,
-        {
-          messageId: transfer.id,
-        }
-      );
-      if (outboundAccepted!) {
-        transfer.toBridgeHubOutboundQueue = outboundAccepted;
-        changed = true;
+    let outboundAccepted = await connection.manager.findOneBy(
+      OutboundMessageAcceptedOnBridgeHub,
+      {
+        messageId: transfer.id,
       }
+    );
+    if (outboundAccepted!) {
+      transfer.nonce = outboundAccepted.nonce;
+      transfer.toBridgeHubOutboundQueue = outboundAccepted;
+      changed = true;
     }
     // Update the final status
     let inboundDispatched = await connection.manager.findOneBy(
@@ -155,6 +146,8 @@ const processToEthereum = async (connection: DataSource) => {
       } else {
         transfer.status = TransferStatusEnum.Failed;
       }
+      transfer.channelId = inboundDispatched.channelId;
+      transfer.toDestination = inboundDispatched;
       changed = true;
     }
     if (changed) {
