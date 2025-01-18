@@ -182,14 +182,14 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     }
   }
 
-  if (transfersToEthereum.length > 0) {
-    ctx.log.debug("saving transfer messages to ethereum");
-    await ctx.store.save(transfersToEthereum);
-  }
-
   if (forwardMessages.length > 0) {
     ctx.log.debug("saving forward messages to ethereum");
     await ctx.store.save(forwardMessages);
+  }
+
+  if (transfersToEthereum.length > 0) {
+    ctx.log.debug("saving transfer messages to ethereum");
+    await ctx.store.save(transfersToEthereum);
   }
 }
 

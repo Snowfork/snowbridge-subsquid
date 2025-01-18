@@ -1,5 +1,5 @@
 import { createOrmConfig } from "@subsquid/typeorm-config";
-import { DataSource } from "typeorm";
+import { DataSource, IsNull, Not } from "typeorm";
 import {
   TransferStatusToPolkadot,
   TransferStatusToEthereum,
@@ -28,7 +28,10 @@ export const postProcess = async () => {
 
   try {
     await processToPolkadot(connection);
-    await processToEthereum(connection);
+    await processToEthereumForwardOnAssetHub(connection);
+    await processToEthereumOnBridgeHubMessageQueue(connection);
+    await processToEthereumOnBridgeHubOutboundQueue(connection);
+    await processToEthereumOnDestination(connection);
   } finally {
     await connection.destroy().catch(() => null);
   }
@@ -81,31 +84,52 @@ const processToPolkadot = async (connection: DataSource) => {
   }
 };
 
-const processToEthereum = async (connection: DataSource) => {
+const processToEthereumForwardOnAssetHub = async (connection: DataSource) => {
   let updated: TransferStatusToEthereum[] = [];
   let transfers = await connection.manager.find(TransferStatusToEthereum, {
-    where: [{ status: TransferStatusEnum.Pending }],
+    relations: {
+      toAssetHubMessageQueue: true,
+    },
+    where: {
+      sourceParaId: Not(AssetHubParaId),
+      toAssetHubMessageQueue: IsNull(),
+    },
   });
   for (let transfer of transfers) {
-    let changed = false;
-    // Update toAssetHubMessageQueue
-    if (transfer.sourceParaId != AssetHubParaId) {
-      let processedMessage = await connection.manager.findOneBy(
-        MessageProcessedOnPolkadot,
-        {
-          messageId: transfer.id,
-        }
-      );
-      if (processedMessage!) {
-        if (processedMessage.success) {
-          transfer.toAssetHubMessageQueue = processedMessage;
-        } else {
-          transfer.status = TransferStatusEnum.Failed;
-        }
-        changed = true;
+    let processedMessage = await connection.manager.findOneBy(
+      MessageProcessedOnPolkadot,
+      {
+        messageId: transfer.id,
       }
+    );
+    if (processedMessage!) {
+      if (processedMessage.success) {
+        transfer.toAssetHubMessageQueue = processedMessage;
+      } else {
+        transfer.status = TransferStatusEnum.Failed;
+      }
+      updated.push(transfer);
     }
-    // Update toBridgeHubMessageQueue
+  }
+  if (updated.length) {
+    await connection.manager.save(updated);
+    console.log("To ethereum transfer forward on AH updated");
+  }
+};
+
+const processToEthereumOnBridgeHubMessageQueue = async (
+  connection: DataSource
+) => {
+  let updated: TransferStatusToEthereum[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+    relations: {
+      toBridgeHubMessageQueue: true,
+    },
+    where: {
+      toBridgeHubMessageQueue: IsNull(),
+    },
+  });
+  for (let transfer of transfers) {
     let bridgeHubId = forwardedTopicId(transfer.id);
     let processedMessage = await connection.manager.findOneBy(
       MessageProcessedOnPolkadot,
@@ -119,9 +143,28 @@ const processToEthereum = async (connection: DataSource) => {
       } else {
         transfer.status = TransferStatusEnum.Failed;
       }
-      changed = true;
+      updated.push(transfer);
     }
-    // Update toBridgeHubOutboundQueue
+  }
+  if (updated.length) {
+    await connection.manager.save(updated);
+    console.log("To ethereum transfer on bridgehub message queue updated");
+  }
+};
+
+const processToEthereumOnBridgeHubOutboundQueue = async (
+  connection: DataSource
+) => {
+  let updated: TransferStatusToEthereum[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+    relations: {
+      toBridgeHubOutboundQueue: true,
+    },
+    where: {
+      toBridgeHubOutboundQueue: IsNull(),
+    },
+  });
+  for (let transfer of transfers) {
     let outboundAccepted = await connection.manager.findOneBy(
       OutboundMessageAcceptedOnBridgeHub,
       {
@@ -131,9 +174,26 @@ const processToEthereum = async (connection: DataSource) => {
     if (outboundAccepted!) {
       transfer.nonce = outboundAccepted.nonce;
       transfer.toBridgeHubOutboundQueue = outboundAccepted;
-      changed = true;
+      updated.push(transfer);
     }
-    // Update the final status
+  }
+  if (updated.length) {
+    await connection.manager.save(updated);
+    console.log("To ethereum transfer on bridgehub outbound queue updated");
+  }
+};
+
+const processToEthereumOnDestination = async (connection: DataSource) => {
+  let updated: TransferStatusToEthereum[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+    relations: {
+      toDestination: true,
+    },
+    where: {
+      toDestination: IsNull(),
+    },
+  });
+  for (let transfer of transfers) {
     let inboundDispatched = await connection.manager.findOneBy(
       InboundMessageDispatchedOnEthereum,
       {
@@ -148,14 +208,11 @@ const processToEthereum = async (connection: DataSource) => {
       }
       transfer.channelId = inboundDispatched.channelId;
       transfer.toDestination = inboundDispatched;
-      changed = true;
-    }
-    if (changed) {
       updated.push(transfer);
     }
   }
   if (updated.length) {
     await connection.manager.save(updated);
-    console.log("To ethereum transfer status updated");
+    console.log("To ethereum transfer on destination updated");
   }
 };
