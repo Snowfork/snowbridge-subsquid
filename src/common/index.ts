@@ -1,13 +1,10 @@
+import { hexToU8a, stringToU8a, u8aToHex } from "@polkadot/util";
+import { blake2AsU8a } from "@polkadot/util-crypto";
+
 export enum TransferStatusEnum {
-  // Sent on source chain
-  Sent = "Sent",
-  // Bridged on BH
-  Bridged = "Bridged",
-  // Forwarded on AH
-  Forwarded = "Forwarded",
-  // Processed | ProcessFailed on destination
-  Processed = "Processed",
-  ProcessFailed = "ProcessFailed",
+  Pending,
+  Complete,
+  Failed,
 }
 
 export const BridgeHubParaId = 1002;
@@ -23,3 +20,20 @@ export interface ToEthereumAsset {
   address: string;
   amount: bigint;
 }
+
+export const toSubscanEventID = (id: string) => {
+  let parts = id.split("-");
+  let blockNumber = parseInt(parts[0]);
+  let eventIndex = parseInt(parts[2]);
+  return `${blockNumber}-${eventIndex}`;
+};
+
+export const forwardedTopicId = (messageId: string): string => {
+  // From rust code
+  // (b"forward_id_for", original_id).using_encoded(sp_io::hashing::blake2_256)
+  const typeEncoded = stringToU8a("forward_id_for");
+  const paraIdEncoded = hexToU8a(messageId);
+  const joined = new Uint8Array([...typeEncoded, ...paraIdEncoded]);
+  const newTopicId = blake2AsU8a(joined, 256);
+  return u8aToHex(newTopicId);
+};

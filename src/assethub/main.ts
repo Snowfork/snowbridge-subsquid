@@ -13,7 +13,12 @@ import {
   V4Location,
   ProcessMessageError,
 } from "./types/v1002000";
-import { TransferStatusEnum, BridgeHubParaId, AssetHubParaId } from "../common";
+import {
+  TransferStatusEnum,
+  BridgeHubParaId,
+  AssetHubParaId,
+  toSubscanEventID,
+} from "../common";
 
 processor.run(
   new TypeormDatabase({
@@ -62,6 +67,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             messageId: rec.id.toString().toLowerCase(),
             paraId: AssetHubParaId,
             success: rec.success,
+            eventId: toSubscanEventID(event.id),
           });
         }
       } else if (event.name == events.polkadotXcm.sent.name) {
@@ -144,7 +150,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             senderAddress,
             destinationAddress,
             amount,
-            status: TransferStatusEnum.Sent,
+            status: TransferStatusEnum.Pending,
           });
         }
       }
@@ -167,23 +173,23 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         id: messageForwarded.messageId,
       });
       if (transfer!) {
-        transfer.forwardedBlockNumber = block.header.height;
-        if (transfer.status == TransferStatusEnum.Sent) {
-          transfer.status = TransferStatusEnum.Forwarded;
+        transfer.toAssetHubMessageQueue = messageForwarded;
+        if (!messageForwarded.success) {
+          transfer.status = TransferStatusEnum.Failed;
         }
         transfersToEthereum.push(transfer);
       }
     }
   }
 
-  if (transfersToEthereum.length > 0) {
-    ctx.log.debug("saving transfer messages to ethereum");
-    await ctx.store.save(transfersToEthereum);
-  }
-
   if (forwardMessages.length > 0) {
     ctx.log.debug("saving forward messages to ethereum");
     await ctx.store.save(forwardMessages);
+  }
+
+  if (transfersToEthereum.length > 0) {
+    ctx.log.debug("saving transfer messages to ethereum");
+    await ctx.store.save(transfersToEthereum);
   }
 }
 
@@ -222,6 +228,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
             messageId: rec.id.toString().toLowerCase(),
             paraId: AssetHubParaId,
             success: rec.success,
+            eventId: toSubscanEventID(event.id),
           });
         }
       }
@@ -233,18 +240,16 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
         id: processedMessage.messageId,
       });
       if (transfer!) {
-        if (transfer.destinationParaId == AssetHubParaId) {
-          // Terminated on AH
-          transfer.destinationBlockNumber = block.header.height;
-          transfer.status = TransferStatusEnum.Processed;
+        if (!processedMessage.success) {
+          transfer.status = TransferStatusEnum.Failed;
         } else {
-          // Forward to 3rd Parachain
-          transfer.forwardedBlockNumber = block.header.height;
-          if (
-            transfer.status == TransferStatusEnum.Sent ||
-            transfer.status == TransferStatusEnum.Bridged
-          ) {
-            transfer.status = TransferStatusEnum.Forwarded;
+          transfer.status = TransferStatusEnum.Complete;
+          if (transfer.destinationParaId == AssetHubParaId) {
+            // Terminated on AH
+            transfer.toDestination = processedMessage;
+          } else {
+            // Forward to 3rd Parachain
+            transfer.toAssetHubMessageQueue = processedMessage;
           }
         }
         transfersToPolkadot.push(transfer);

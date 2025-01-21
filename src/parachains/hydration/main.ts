@@ -18,6 +18,7 @@ import {
   AssetHubParaId,
   ToEthereumAsset,
   HydrationParaId,
+  toSubscanEventID,
 } from "../../common";
 
 processor.run(
@@ -219,7 +220,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           senderAddress: senderAddress!,
           destinationAddress: destinationAddress!,
           amount: amount!,
-          status: TransferStatusEnum.Sent,
+          status: TransferStatusEnum.Pending,
         });
         let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
           id: transferToEthereum.messageId,
@@ -271,18 +272,19 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
             messageId: rec.id.toString().toLowerCase(),
             paraId: HydrationParaId,
             success: rec.success,
+            eventId: toSubscanEventID(event.id),
           });
           processedMessages.push(message);
           let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
             id: message.messageId,
           });
           if (transfer!) {
-            if (rec.success) {
-              transfer.status = TransferStatusEnum.Processed;
+            if (message.success) {
+              transfer.status = TransferStatusEnum.Complete;
             } else {
-              transfer.status = TransferStatusEnum.ProcessFailed;
+              transfer.status = TransferStatusEnum.Failed;
             }
-            transfer.destinationBlockNumber = block.header.height;
+            transfer.toDestination = message;
             transfersToPolkadot.push(transfer);
           }
         }

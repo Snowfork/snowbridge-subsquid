@@ -9,7 +9,12 @@ import {
 } from "../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
-import { AssetHubParaId, BridgeHubParaId, TransferStatusEnum } from "../common";
+import {
+  AssetHubParaId,
+  BridgeHubParaId,
+  toSubscanEventID,
+  TransferStatusEnum,
+} from "../common";
 import { AggregateMessageOrigin, ProcessMessageError } from "./types/v1002000";
 
 processor.run(
@@ -43,16 +48,17 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           messageId: rec.messageId.toString().toLowerCase(),
           channelId: rec.channelId.toString(),
           nonce: Number(rec.nonce),
+          eventId: toSubscanEventID(event.id),
+          txHash: event.extrinsic?.hash,
         });
         inboundMessages.push(message);
         let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
           id: message.messageId,
         });
         if (transfer!) {
-          transfer.bridgedBlockNumber = block.header.height;
-          if (transfer.status == TransferStatusEnum.Sent) {
-            transfer.status = TransferStatusEnum.Bridged;
-          }
+          transfer.channelId = message.channelId;
+          transfer.nonce = message.nonce;
+          transfer.toBridgeHubInboundQueue = message;
           transfersToPolkadot.push(transfer);
         }
       }
@@ -90,6 +96,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           messageId: rec.id.toString().toLowerCase(),
           nonce: Number(rec.nonce),
           channelId: rec.channelId,
+          eventId: toSubscanEventID(event.id),
         });
         outboundMessages.push(message);
 
@@ -99,13 +106,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         if (transfer!) {
           transfer.channelId = rec.channelId;
           transfer.nonce = Number(rec.nonce);
-          transfer.bridgedBlockNumber = block.header.height;
-          if (
-            transfer.status == TransferStatusEnum.Sent ||
-            transfer.status == TransferStatusEnum.Forwarded
-          ) {
-            transfer.status = TransferStatusEnum.Bridged;
-          }
+          transfer.toBridgeHubOutboundQueue = message;
           transfersToEthereum.push(transfer);
         }
       }
@@ -138,6 +139,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             messageId: rec.id.toString().toLowerCase(),
             paraId: BridgeHubParaId,
             success: rec.success,
+            eventId: toSubscanEventID(event.id),
           });
           processedMessages.push(processedMessage);
         }

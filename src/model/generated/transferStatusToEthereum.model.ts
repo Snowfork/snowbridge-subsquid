@@ -1,4 +1,7 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_} from "@subsquid/typeorm-store"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
+import {MessageProcessedOnPolkadot} from "./messageProcessedOnPolkadot.model"
+import {OutboundMessageAcceptedOnBridgeHub} from "./outboundMessageAcceptedOnBridgeHub.model"
+import {InboundMessageDispatchedOnEthereum} from "./inboundMessageDispatchedOnEthereum.model"
 
 /**
  * Transfers from Polkadot to Ethereum
@@ -33,8 +36,8 @@ export class TransferStatusToEthereum {
     nonce!: number | undefined | null
 
     @Index_()
-    @StringColumn_({nullable: false})
-    status!: string
+    @IntColumn_({nullable: true})
+    status!: number | undefined | null
 
     @StringColumn_({nullable: true})
     tokenAddress!: string | undefined | null
@@ -57,12 +60,19 @@ export class TransferStatusToEthereum {
     @StringColumn_({nullable: true})
     channelId!: string | undefined | null
 
-    @IntColumn_({nullable: true})
-    forwardedBlockNumber!: number | undefined | null
+    @Index_()
+    @ManyToOne_(() => MessageProcessedOnPolkadot, {nullable: true})
+    toAssetHubMessageQueue!: MessageProcessedOnPolkadot | undefined | null
 
-    @IntColumn_({nullable: true})
-    bridgedBlockNumber!: number | undefined | null
+    @Index_()
+    @ManyToOne_(() => MessageProcessedOnPolkadot, {nullable: true})
+    toBridgeHubMessageQueue!: MessageProcessedOnPolkadot | undefined | null
 
-    @IntColumn_({nullable: true})
-    destinationBlockNumber!: number | undefined | null
+    @Index_()
+    @ManyToOne_(() => OutboundMessageAcceptedOnBridgeHub, {nullable: true})
+    toBridgeHubOutboundQueue!: OutboundMessageAcceptedOnBridgeHub | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => InboundMessageDispatchedOnEthereum, {nullable: true})
+    toDestination!: InboundMessageDispatchedOnEthereum | undefined | null
 }

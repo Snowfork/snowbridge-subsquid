@@ -150,6 +150,47 @@ Deploy to cloud with `sqd`
 sqd deploy --org snowfork /home/ubuntu/projects/snowbridge-subsquid
 ```
 
-### API endpoint
+### How to use the API
 
-https://data.snowbridge.network/graphql
+UI or 3rd teams can query transfers through Snowbridge from this indexer, explore https://data.snowbridge.network/graphql for the querys we support.
+
+For easy usage we aggregate all data to two queries, which is `transferStatusToEthereums` for direction to ethereum and `transferStatusToPolkadots` for the other direction. A demo script for reference:
+
+```
+./scripts/query-transfers.sh
+```
+
+and the result is something like:
+
+```
+"transferStatusToPolkadots": [
+      {
+        "txHash": "0x53597b6f98334a160f26182398ec3e7368be8ca7aea3eea41d288046f3a1999d",
+        "status": 1, // 0:pending, 1: completed 2: failed
+        "channelId": "0xc173fac324158e77fb5840738a1a541f633cbec8884c6a601c567d2b376a0539",
+        "destinationAddress": "0x628119c736c0e8ff28bd2f42920a4682bd6feb7b000000000000000000000000",
+        "messageId": "0x00d720d39256bab74c0be362005b9a50951a0909e6dabda588a5d319bfbedb65",
+        "nonce": 561,
+        "senderAddress": "0x628119c736c0e8ff28bd2f42920a4682bd6feb7b",
+        "timestamp": "2025-01-20T07:09:47.000000Z",
+        "tokenAddress": "0xba41ddf06b7ffd89d1267b5a93bfef2424eb2003",
+        "amount": "68554000000000000000000"
+      },
+      ...
+],
+"transferStatusToEthereums": [
+      {
+        "txHash": "0xb57627dbcc89be3bdaf465676fced56eeb32d95855db003f1e911aa4c3769059",
+        "status": 1, // 0:pending, 1: completed 2: failed
+        "channelId": "0xc173fac324158e77fb5840738a1a541f633cbec8884c6a601c567d2b376a0539",
+        "destinationAddress": "0x2a9b5c906c6cac92dc624ec0fa6c3b4c9f2e7cc2",
+        "messageId": "0x95c52ffe4f976c99bcfe8d76f6011e62b7f215ada834e8c0bcf6538b31b1bf87",
+        "nonce": 152,
+        "senderAddress": "0x4a79eee26f5dab7c230f7f2c8657cb541a4b8e391c8357f5eb51413f249ddc13",
+        "timestamp": "2025-01-20T04:10:48.000000Z",
+        "tokenAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "amount": "8133242931806029953"
+      },
+      ...
+]
+```
