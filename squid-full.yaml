@@ -34,11 +34,14 @@ deploy:
   api:
     cmd: ["sqd", "serve:prod"]
 scale:
+  dedicated: true
   addons:
     postgres:
       storage: 100G
-      profile: small
+      profile: medium
   processor:
-    profile: small
+    profile: medium
   api:
-    profile: small
+    profile: medium
+    # load-balance two replicas
+    replicas: 2

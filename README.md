@@ -54,7 +54,7 @@ sqd serve
 
 A GraphiQL playground will be available at [localhost:4350/graphql](http://localhost:4350/graphql).
 
-## Dev flow
+## Development flow
 
 ### 1. Define database schema
 
@@ -143,11 +143,17 @@ Follow the guides in:
 
 - https://app.subsquid.io/squids/deploy
 
-
-Deploy to cloud with `sqd`
+first login with the api key with:
 
 ```
-sqd deploy --org snowfork /home/ubuntu/projects/snowbridge-subsquid
+sqd auth -k YOUR_API_TOKEN
+```
+
+
+then deploy to cloud with:
+
+```
+sqd deploy --org snowbridge .
 ```
 
 ### How to use the API
