@@ -15,6 +15,12 @@ export const MoonBeamParaId = 2004;
 
 export const HydrationParaId = 2034;
 
+export const BifrostParaId = 2030;
+
+export const MythosParaId = 3369;
+
+export const AcalaParaId = 2000;
+
 export interface ToEthereumAsset {
   location: string;
   address: string;

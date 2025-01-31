@@ -1,0 +1,1 @@
+database=squid_test

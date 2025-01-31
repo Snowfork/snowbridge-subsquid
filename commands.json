@@ -133,7 +133,11 @@
     "process:parachain:bifrost": {
       "description": "Start the squid processor",
       "deps": ["build"],
-      "cmd": ["node", "--require=dotenv/config", "lib/parachains/acala/main.js"]
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/parachains/bifrost/main.js"
+      ]
     },
     "generateMeta:parachain:acala": {
       "description": "Generate metadata for acala",
