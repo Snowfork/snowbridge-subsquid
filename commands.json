@@ -105,16 +105,74 @@
       ]
     },
     "typegen:parachain:moonbeam": {
-      "description": "Generate data access classes for an moombeam metadata",
+      "description": "Generate data access classes from metadata",
       "cmd": ["squid-substrate-typegen", "./typegen-moonbeam.json"]
     },
     "process:parachain:moonbeam": {
-      "description": "Load .env and start the squid processor",
+      "description": "Start the squid processor",
       "deps": ["build"],
       "cmd": [
         "node",
         "--require=dotenv/config",
         "lib/parachains/moonbeam/main.js"
+      ]
+    },
+    "generateMeta:parachain:bifrost": {
+      "description": "Generate metadata for bifrost",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://bifrost-polkadot-rpc.dwellir.com",
+        "--out=bifrost-versions.jsonl"
+      ]
+    },
+    "typegen:parachain:bifrost": {
+      "description": "Generate data access classes from metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-bifrost.json"]
+    },
+    "process:parachain:bifrost": {
+      "description": "Start the squid processor",
+      "deps": ["build"],
+      "cmd": ["node", "--require=dotenv/config", "lib/parachains/acala/main.js"]
+    },
+    "generateMeta:parachain:acala": {
+      "description": "Generate metadata for acala",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://acala-rpc-3.aca-api.network/ws",
+        "--out=acala-versions.jsonl"
+      ]
+    },
+    "typegen:parachain:acala": {
+      "description": "Generate data access classes from metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-acala.json"]
+    },
+    "process:parachain:acala": {
+      "description": "Start the squid processor",
+      "deps": ["build"],
+      "cmd": ["node", "--require=dotenv/config", "lib/parachains/acala/main.js"]
+    },
+    "generateMeta:parachain:mythos": {
+      "description": "Generate metadata for mythos",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://polkadot-mythos-rpc.polkadot.io",
+        "--out=mythos-versions.jsonl"
+      ]
+    },
+    "typegen:parachain:mythos": {
+      "description": "Generate data access classes from metadata",
+      "cmd": ["squid-substrate-typegen", "./typegen-mythos.json"]
+    },
+    "process:parachain:mythos": {
+      "description": "Start the squid processor",
+      "deps": ["build"],
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/parachains/mythos/main.js"
       ]
     },
     "generateMeta:parachain:hydration": {
@@ -127,11 +185,11 @@
       ]
     },
     "typegen:parachain:hydration": {
-      "description": "Generate data access classes for hydration metadata",
+      "description": "Generate data access classes from metadata",
       "cmd": ["squid-substrate-typegen", "./typegen-hydration.json"]
     },
     "process:parachain:hydration": {
-      "description": "Load .env and start the squid processor",
+      "description": "Start the squid processor",
       "deps": ["build"],
       "cmd": [
         "node",
