@@ -246,6 +246,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           transfer.status = TransferStatusEnum.Complete;
           if (transfer.destinationParaId == AssetHubParaId) {
             // Terminated on AH
+            transfer.toAssetHubMessageQueue = processedMessage;
             transfer.toDestination = processedMessage;
           } else {
             // Forward to 3rd Parachain
