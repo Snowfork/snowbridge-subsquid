@@ -1,4 +1,7 @@
-set -e
+#!/usr/bin/env bash
+set -eu
+
+source ./scripts/set-env.sh
 
 pm2 stop staging.ecosystem.config.js
 

@@ -1,5 +1,5 @@
 {
-  "outDir": "src/parachains/types/moonbeam",
+  "outDir": "src/parachains/moonbeam/types",
   "specVersions": "moonbeam-versions.jsonl",
   "pallets": {
     "MessageQueue": {

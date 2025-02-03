@@ -86,6 +86,7 @@ const processToPolkadotOnAssetHub = async (connection: DataSource) => {
     );
     if (processedMessage!) {
       if (transfer.destinationParaId == AssetHubParaId) {
+        transfer.toAssetHubMessageQueue = processedMessage;
         transfer.toDestination = processedMessage;
       } else {
         transfer.toAssetHubMessageQueue = processedMessage;

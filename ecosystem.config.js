@@ -21,6 +21,26 @@ module.exports = {
       script: "./lib/parachains/hydration/main.js",
     },
     {
+      name: "moonbeam",
+      node_args: "--require=dotenv/config",
+      script: "./lib/parachains/moonbeam/main.js",
+    },
+    {
+      name: "bifrost",
+      node_args: "--require=dotenv/config",
+      script: "./lib/parachains/bifrost/main.js",
+    },
+    {
+      name: "acala",
+      node_args: "--require=dotenv/config",
+      script: "./lib/parachains/acala/main.js",
+    },
+    {
+      name: "mythos",
+      node_args: "--require=dotenv/config",
+      script: "./lib/parachains/mythos/main.js",
+    },
+    {
       name: "graphql",
       script: "./node_modules/.bin/squid-graphql-server",
     },
