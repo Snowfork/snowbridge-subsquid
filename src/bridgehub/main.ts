@@ -16,6 +16,7 @@ import {
   TransferStatusEnum,
 } from "../common";
 import { AggregateMessageOrigin, ProcessMessageError } from "./types/v1002000";
+import { ProcessMessageError as ProcessMessageErrorV1003000 } from "./types/v1003000";
 
 processor.run(
   new TypeormDatabase({
@@ -118,12 +119,14 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           id: Bytes;
           origin: AggregateMessageOrigin;
           success?: boolean;
-          error?: ProcessMessageError;
+          error?: ProcessMessageError | ProcessMessageErrorV1003000;
         };
         if (events.messageQueue.processed.v1002000.is(event)) {
           rec = events.messageQueue.processed.v1002000.decode(event);
         } else if (events.messageQueue.processingFailed.v1002000.is(event)) {
           rec = events.messageQueue.processingFailed.v1002000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1003000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1003000.decode(event);
         } else {
           throw new Error("Unsupported spec");
         }
