@@ -91,9 +91,14 @@
       "cmd": ["node", "--require=dotenv/config", "lib/assethub/main.js"]
     },
     "postprocess": {
-      "description": "Update status based on stored data",
+      "description": "Aggregate data from multiple tables",
       "deps": ["build"],
       "cmd": ["node", "--require=dotenv/config", "lib/postprocess/cron.js"]
+    },
+    "oneshot-postprocess": {
+      "description": "Oneshot Aggregate",
+      "deps": ["build"],
+      "cmd": ["node", "--require=dotenv/config", "lib/postprocess/start.js"]
     },
     "generateMeta:parachain:moonbeam": {
       "description": "Generate metadata for moonbeam",
