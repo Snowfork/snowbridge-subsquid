@@ -25,12 +25,28 @@ deploy:
       env:
         RPC_ASSETHUB_POLKADOT: "wss://asset-hub-polkadot-rpc.dwellir.com"
       cmd: ["sqd", "process:assethub"]
+    - name: post-processor
+      cmd: ["sqd", "postprocess"]
     - name: hydration-processor
       env:
         RPC_HYDRATION: "wss://hydration-rpc.n.dwellir.com"
       cmd: ["sqd", "process:parachain:hydration"]
-    - name: post-processor
-      cmd: ["sqd", "postprocess"]
+    - name: moonbeam-processor
+      env:
+        RPC_MOONBEAM: "wss://moonbeam.ibp.network"
+      cmd: ["sqd", "process:parachain:moonbeam"]
+    - name: acala-processor
+      env:
+        RPC_ACALA: "wss://acala-rpc-3.aca-api.network/ws"
+      cmd: ["sqd", "process:parachain:acala"]
+    - name: bifrost-processor
+      env:
+        RPC_BIFROST: "wss://bifrost-polkadot-rpc.dwellir.com"
+      cmd: ["sqd", "process:parachain:bifrost"]
+    - name: mythos-processor
+      env:
+        RPC_MYTHOS: "wss://polkadot-mythos-rpc.polkadot.io"
+      cmd: ["sqd", "process:parachain:mythos"]
   api:
     cmd: ["sqd", "serve:prod"]
 scale:
