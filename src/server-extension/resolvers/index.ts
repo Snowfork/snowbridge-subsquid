@@ -11,6 +11,14 @@ export class ElapseResult {
   elapse!: number;
 }
 
+@ObjectType()
+export class ChainStatus {
+  @Field(() => String, { nullable: false })
+  name!: string;
+  @Field(() => Number, { nullable: false })
+  height!: number;
+}
+
 @Resolver()
 export class TransferElapseResolver {
   constructor(private tx: () => Promise<EntityManager>) {}
@@ -61,5 +69,22 @@ export class TransferElapseResolver {
 
     const result: [ElapseResult] = await manager.query(query);
     return result[0];
+  }
+}
+
+@Resolver()
+export class SyncStatusResolver {
+  constructor(private tx: () => Promise<EntityManager>) {}
+
+  @Query(() => [ChainStatus])
+  async latestBlocks(): Promise<ChainStatus[]> {
+    const manager = await this.tx();
+    let query = `select 'assethub' as name, height FROM assethub_processor.status LIMIT 1`;
+    let assethub_status: [ChainStatus] = await manager.query(query);
+    query = `select 'bridgehub' as name, height FROM bridgehub_processor.status LIMIT 1`;
+    let bridgehub_status: [ChainStatus] = await manager.query(query);
+    query = `select 'ethereum' as name, height FROM eth_processor.status LIMIT 1`;
+    let ethereum_status: [ChainStatus] = await manager.query(query);
+    return assethub_status.concat(bridgehub_status).concat(ethereum_status);
   }
 }
