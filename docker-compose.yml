@@ -7,6 +7,7 @@ services:
       POSTGRES_DB: squid
       POSTGRES_PASSWORD: postgres
     shm_size: 1gb
+    restart: always
     ports:
       - "${DB_PORT}:5432"
     command: ["postgres", "-c", "log_statement=all"]
