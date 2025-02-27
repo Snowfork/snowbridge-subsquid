@@ -45,14 +45,31 @@
       "description": "Generate data access classes for an ABI file(s)",
       "cmd": [
         "squid-evm-typegen",
-        "./src/ethereum/abi",
-        { "glob": "./abi/*.json" }
+        "./src/polkadot/ethereum/abi",
+        { "glob": "./abi/polkadot/*.json" }
+      ]
+    },
+    "typegen:ethereum:westend": {
+      "description": "Generate data access classes for an ABI file(s)",
+      "cmd": [
+        "squid-evm-typegen",
+        "./src/westend/ethereum/abi",
+        { "glob": "./abi/westend/*.json" }
       ]
     },
     "process:ethereum": {
       "description": "Load .env and start the squid processor",
       "deps": ["build"],
-      "cmd": ["node", "--require=dotenv/config", "lib/ethereum/main.js"]
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/polkadot/ethereum/main.js"
+      ]
+    },
+    "process:ethereum:westend": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build"],
+      "cmd": ["node", "--require=dotenv/config", "lib/westend/ethereum/main.js"]
     },
     "generateMeta:bridgehub": {
       "description": "Generate metadata for bridge hub",
@@ -60,17 +77,49 @@
         "npx",
         "squid-substrate-metadata-explorer",
         "--rpc=wss://bridge-hub-polkadot-rpc.dwellir.com",
-        "--out=bridgehub-versions.jsonl"
+        "--out=versions/polkadot/bridgehub-versions.jsonl"
+      ]
+    },
+    "generateMeta:bridgehub:westend": {
+      "description": "Generate metadata for bridge hub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://bridge-hub-westend-rpc.dwellir.com",
+        "--out=versions/westend/bridgehub-versions.jsonl"
       ]
     },
     "typegen:bridgehub": {
       "description": "Generate data access classes for an substrate metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen-bridgehub.json"]
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/polkadot/typegen-bridgehub.json"
+      ]
+    },
+    "typegen:bridgehub:westend": {
+      "description": "Generate data access classes for an substrate metadata",
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/westend/typegen-bridgehub.json"
+      ]
     },
     "process:bridgehub": {
       "description": "Load .env and start the squid processor",
       "deps": ["build"],
-      "cmd": ["node", "--require=dotenv/config", "lib/bridgehub/main.js"]
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/polkadot/bridgehub/main.js"
+      ]
+    },
+    "process:bridgehub:westend": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build"],
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/westend/bridgehub/main.js"
+      ]
     },
     "generateMeta:assethub": {
       "description": "Generate metadata for asset hub",
@@ -78,17 +127,24 @@
         "npx",
         "squid-substrate-metadata-explorer",
         "--rpc=wss://asset-hub-polkadot-rpc.dwellir.com",
-        "--out=assethub-versions.jsonl"
+        "--out=versions/polkadot/assethub-versions.jsonl"
       ]
     },
     "typegen:assethub": {
       "description": "Generate data access classes for an substrate metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen-assethub.json"]
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/polkadot/typegen-assethub.json"
+      ]
     },
     "process:assethub": {
       "description": "Load .env and start the squid processor",
       "deps": ["build"],
-      "cmd": ["node", "--require=dotenv/config", "lib/assethub/main.js"]
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/polkadot/assethub/main.js"
+      ]
     },
     "postprocess": {
       "description": "Aggregate data from multiple tables",
@@ -106,12 +162,15 @@
         "npx",
         "squid-substrate-metadata-explorer",
         "--rpc=wss://moonbeam.ibp.network",
-        "--out=moonbeam-versions.jsonl"
+        "--out=versions/polkadot/moonbeam-versions.jsonl"
       ]
     },
     "typegen:parachain:moonbeam": {
       "description": "Generate data access classes from metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen-moonbeam.json"]
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/polkadot/typegen-moonbeam.json"
+      ]
     },
     "process:parachain:moonbeam": {
       "description": "Start the squid processor",
@@ -119,7 +178,7 @@
       "cmd": [
         "node",
         "--require=dotenv/config",
-        "lib/parachains/moonbeam/main.js"
+        "lib/polkadot/parachains/moonbeam/main.js"
       ]
     },
     "generateMeta:parachain:bifrost": {
@@ -128,12 +187,15 @@
         "npx",
         "squid-substrate-metadata-explorer",
         "--rpc=wss://bifrost-polkadot-rpc.dwellir.com",
-        "--out=bifrost-versions.jsonl"
+        "--out=versions/polkadot/bifrost-versions.jsonl"
       ]
     },
     "typegen:parachain:bifrost": {
       "description": "Generate data access classes from metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen-bifrost.json"]
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/polkadot/typegen-bifrost.json"
+      ]
     },
     "process:parachain:bifrost": {
       "description": "Start the squid processor",
@@ -141,7 +203,7 @@
       "cmd": [
         "node",
         "--require=dotenv/config",
-        "lib/parachains/bifrost/main.js"
+        "lib/polkadot/parachains/bifrost/main.js"
       ]
     },
     "generateMeta:parachain:acala": {
@@ -150,17 +212,24 @@
         "npx",
         "squid-substrate-metadata-explorer",
         "--rpc=wss://acala-rpc-3.aca-api.network/ws",
-        "--out=acala-versions.jsonl"
+        "--out=versions/polkadot/acala-versions.jsonl"
       ]
     },
     "typegen:parachain:acala": {
       "description": "Generate data access classes from metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen-acala.json"]
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/polkadot/typegen-acala.json"
+      ]
     },
     "process:parachain:acala": {
       "description": "Start the squid processor",
       "deps": ["build"],
-      "cmd": ["node", "--require=dotenv/config", "lib/parachains/acala/main.js"]
+      "cmd": [
+        "node",
+        "--require=dotenv/config",
+        "lib/polkadot/parachains/acala/main.js"
+      ]
     },
     "generateMeta:parachain:mythos": {
       "description": "Generate metadata for mythos",
@@ -168,12 +237,15 @@
         "npx",
         "squid-substrate-metadata-explorer",
         "--rpc=wss://polkadot-mythos-rpc.polkadot.io",
-        "--out=mythos-versions.jsonl"
+        "--out=versions/polkadot/mythos-versions.jsonl"
       ]
     },
     "typegen:parachain:mythos": {
       "description": "Generate data access classes from metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen-mythos.json"]
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/polkadot/typegen-mythos.json"
+      ]
     },
     "process:parachain:mythos": {
       "description": "Start the squid processor",
@@ -181,7 +253,7 @@
       "cmd": [
         "node",
         "--require=dotenv/config",
-        "lib/parachains/mythos/main.js"
+        "lib/polkadot/parachains/mythos/main.js"
       ]
     },
     "generateMeta:parachain:hydration": {
@@ -190,12 +262,15 @@
         "npx",
         "squid-substrate-metadata-explorer",
         "--rpc=wss://hydration.dotters.network",
-        "--out=hydration-versions.jsonl"
+        "--out=versions/polkadot/hydration-versions.jsonl"
       ]
     },
     "typegen:parachain:hydration": {
       "description": "Generate data access classes from metadata",
-      "cmd": ["squid-substrate-typegen", "./typegen-hydration.json"]
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/polkadot/typegen-hydration.json"
+      ]
     },
     "process:parachain:hydration": {
       "description": "Start the squid processor",
@@ -203,7 +278,7 @@
       "cmd": [
         "node",
         "--require=dotenv/config",
-        "lib/parachains/hydration/main.js"
+        "lib/polkadot/parachains/hydration/main.js"
       ]
     },
     "serve": {
