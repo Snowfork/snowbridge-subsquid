@@ -29,6 +29,7 @@ export const postProcess = async () => {
   try {
     await processToPolkadotOnBridgeHub(connection);
     await processToPolkadotOnAssetHub(connection);
+    await processToPolkadotOnDestination(connection);
     await processToEthereumForwardOnAssetHub(connection);
     await processToEthereumOnBridgeHubMessageQueue(connection);
     await processToEthereumOnBridgeHubOutboundQueue(connection);
@@ -66,7 +67,6 @@ const processToPolkadotOnBridgeHub = async (connection: DataSource) => {
   }
 };
 
-// Before Patch#2409 when transfer processed on AH, treat it as succeed
 const processToPolkadotOnAssetHub = async (connection: DataSource) => {
   let updated: TransferStatusToPolkadot[] = [];
   let transfers = await connection.manager.find(TransferStatusToPolkadot, {
@@ -91,6 +91,41 @@ const processToPolkadotOnAssetHub = async (connection: DataSource) => {
       } else {
         transfer.toAssetHubMessageQueue = processedMessage;
       }
+      if (processedMessage.success) {
+        transfer.status = TransferStatusEnum.Complete;
+      } else {
+        transfer.status = TransferStatusEnum.Failed;
+      }
+      updated.push(transfer);
+    }
+  }
+  if (updated.length) {
+    await connection.manager.save(updated);
+    console.log("To polkadot transfer on AH updated");
+  }
+};
+
+const processToPolkadotOnDestination = async (connection: DataSource) => {
+  let updated: TransferStatusToPolkadot[] = [];
+  let transfers = await connection.manager.find(TransferStatusToPolkadot, {
+    relations: {
+      toDestination: true,
+    },
+    where: {
+      toDestination: IsNull(),
+      destinationParaId: Not(AssetHubParaId),
+    },
+  });
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      MessageProcessedOnPolkadot,
+      {
+        messageId: transfer.id,
+        paraId: Not(AssetHubParaId),
+      }
+    );
+    if (processedMessage!) {
+      transfer.toDestination = processedMessage;
       if (processedMessage.success) {
         transfer.status = TransferStatusEnum.Complete;
       } else {
