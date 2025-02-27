@@ -11,10 +11,10 @@ import {
 
 import { events } from "./types";
 
-const SUBSQUID_NETWORK = process.env["SUBSQUID_NETWORK_HYDRADX"] || "hydradx";
+const SUBSQUID_NETWORK = process.env["SUBSQUID_NETWORK_HYDRATION"] || "hydradx";
 
-const START_BLOCK = process.env["START_BLOCK_HYDRADX"]
-  ? parseInt(process.env["START_BLOCK_HYDRADX"])
+const START_BLOCK = process.env["START_BLOCK_HYDRATION"]
+  ? parseInt(process.env["START_BLOCK_HYDRATION"])
   : 5973113;
 
 const RPC_URL =
