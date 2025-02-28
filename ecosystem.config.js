@@ -3,42 +3,42 @@ module.exports = {
     {
       name: "ethereum",
       node_args: "--require=dotenv/config",
-      script: "./lib/ethereum/main.js",
+      script: "./lib/polkadot/ethereum/main.js",
     },
     {
       name: "bridgehub",
       node_args: "--require=dotenv/config",
-      script: "./lib/bridgehub/main.js",
+      script: "./lib/polkadot/bridgehub/main.js",
     },
     {
       name: "assethub",
       node_args: "--require=dotenv/config",
-      script: "./lib/assethub/main.js",
+      script: "./lib/polkadot/assethub/main.js",
     },
     {
       name: "hydration",
       node_args: "--require=dotenv/config",
-      script: "./lib/parachains/hydration/main.js",
+      script: "./lib/polkadot/parachains/hydration/main.js",
     },
     {
       name: "moonbeam",
       node_args: "--require=dotenv/config",
-      script: "./lib/parachains/moonbeam/main.js",
+      script: "./lib/polkadot/parachains/moonbeam/main.js",
     },
     {
       name: "bifrost",
       node_args: "--require=dotenv/config",
-      script: "./lib/parachains/bifrost/main.js",
+      script: "./lib/polkadot/parachains/bifrost/main.js",
     },
     {
       name: "acala",
       node_args: "--require=dotenv/config",
-      script: "./lib/parachains/acala/main.js",
+      script: "./lib/polkadot/parachains/acala/main.js",
     },
     {
       name: "mythos",
       node_args: "--require=dotenv/config",
-      script: "./lib/parachains/mythos/main.js",
+      script: "./lib/polkadot/parachains/mythos/main.js",
     },
     {
       name: "graphql",

@@ -3,22 +3,42 @@ module.exports = {
     {
       name: "staging-ethereum",
       node_args: "--require=dotenv/config",
-      script: "./lib/ethereum/main.js",
+      script: "./lib/polkadot/ethereum/main.js",
     },
     {
       name: "staging-bridgehub",
       node_args: "--require=dotenv/config",
-      script: "./lib/bridgehub/main.js",
+      script: "./lib/polkadot/bridgehub/main.js",
     },
     {
       name: "staging-assethub",
       node_args: "--require=dotenv/config",
-      script: "./lib/assethub/main.js",
+      script: "./lib/polkadot/assethub/main.js",
     },
     {
       name: "staging-hydration",
       node_args: "--require=dotenv/config",
-      script: "./lib/parachains/hydration/main.js",
+      script: "./lib/polkadot/parachains/hydration/main.js",
+    },
+    {
+      name: "staging-moonbeam",
+      node_args: "--require=dotenv/config",
+      script: "./lib/polkadot/parachains/moonbeam/main.js",
+    },
+    {
+      name: "staging-bifrost",
+      node_args: "--require=dotenv/config",
+      script: "./lib/polkadot/parachains/bifrost/main.js",
+    },
+    {
+      name: "staging-acala",
+      node_args: "--require=dotenv/config",
+      script: "./lib/polkadot/parachains/acala/main.js",
+    },
+    {
+      name: "staging-mythos",
+      node_args: "--require=dotenv/config",
+      script: "./lib/polkadot/parachains/mythos/main.js",
     },
     {
       name: "staging-graphql",
