@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/polkadot/bridgehub/types",
+  "outDir": "../../src/polkadot/bridgehub/types",
   "specVersions": "bridgehub-versions.jsonl",
   "pallets": {
     "EthereumInboundQueue": {

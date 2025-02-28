@@ -130,11 +130,27 @@
         "--out=versions/polkadot/assethub-versions.jsonl"
       ]
     },
+    "generateMeta:assethub:westend": {
+      "description": "Generate metadata for asset hub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://asset-hub-westend-rpc.dwellir.com",
+        "--out=versions/westend/assethub-versions.jsonl"
+      ]
+    },
     "typegen:assethub": {
       "description": "Generate data access classes for an substrate metadata",
       "cmd": [
         "squid-substrate-typegen",
         "./versions/polkadot/typegen-assethub.json"
+      ]
+    },
+    "typegen:assethub:westend": {
+      "description": "Generate data access classes for an substrate metadata",
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/westend/typegen-assethub.json"
       ]
     },
     "process:assethub": {
@@ -145,6 +161,11 @@
         "--require=dotenv/config",
         "lib/polkadot/assethub/main.js"
       ]
+    },
+    "process:assethub:westend": {
+      "description": "Load .env and start the squid processor",
+      "deps": ["build"],
+      "cmd": ["node", "--require=dotenv/config", "lib/westend/assethub/main.js"]
     },
     "postprocess": {
       "description": "Aggregate data from multiple tables",

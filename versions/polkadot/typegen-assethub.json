@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/assethub/types",
+  "outDir": "../../src/assethub/types",
   "specVersions": "assethub-versions.jsonl",
   "pallets": {
     "MessageQueue": {

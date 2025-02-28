@@ -1,5 +1,5 @@
 {
-  "outDir": "../src/westend/bridgehub/types",
+  "outDir": "../../src/westend/bridgehub/types",
   "specVersions": "bridgehub-versions.jsonl",
   "pallets": {
     "EthereumInboundQueue": {
