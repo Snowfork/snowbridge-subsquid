@@ -8,8 +8,25 @@ import {
 import { events } from "./types";
 import { Bytes } from "./types/support";
 import { AggregateMessageOrigin, ProcessMessageError } from "./types/v1004000";
-import { V4Instruction, V4Location } from "./types/v1007000";
-import { ProcessMessageError as ProcessMessageErrorV1013000 } from "./types/v1013000";
+import { V4Instruction } from "./types/v1007000";
+import {
+  AggregateMessageOrigin as AggregateMessageOriginV1013000,
+  ProcessMessageError as ProcessMessageErrorV1013000,
+} from "./types/v1013000";
+import { V4Location } from "./types/v1016000";
+import {
+  V4Location as V4LocationV1016005,
+  V5Location,
+  V5Instruction,
+} from "./types/v1016005";
+import {
+  V5Location as V5LocationV1016006,
+  V5Instruction as V5InstructionV1016006,
+} from "./types/v1016006";
+import {
+  V5Location as V5LocationV1017003,
+  V5Instruction as V5InstructionV1017003,
+} from "./types/v1017003";
 import {
   TransferStatusEnum,
   BridgeHubParaId,
@@ -44,7 +61,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
       ) {
         let rec: {
           id: Bytes;
-          origin: AggregateMessageOrigin;
+          origin: AggregateMessageOrigin | AggregateMessageOriginV1013000;
           success?: boolean;
           error?: ProcessMessageError | ProcessMessageErrorV1013000;
         };
@@ -71,12 +88,32 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         }
       } else if (event.name == events.polkadotXcm.sent.name) {
         let rec: {
-          origin: V4Location;
-          destination: V4Location;
+          origin:
+            | V4Location
+            | V4LocationV1016005
+            | V5Location
+            | V5LocationV1016006
+            | V5LocationV1017003;
+          destination:
+            | V4Location
+            | V4LocationV1016005
+            | V5Location
+            | V5LocationV1016006
+            | V5LocationV1017003;
           messageId: Bytes;
-          message: V4Instruction[];
+          message:
+            | V4Instruction[]
+            | V5Instruction[]
+            | V5InstructionV1016006[]
+            | V5InstructionV1017003[];
         };
-        if (events.polkadotXcm.sent.v1017003.is(event)) {
+        if (events.polkadotXcm.sent.v1007000.is(event)) {
+          rec = events.polkadotXcm.sent.v1007000.decode(event);
+        } else if (events.polkadotXcm.sent.v1016005.is(event)) {
+          rec = events.polkadotXcm.sent.v1016005.decode(event);
+        } else if (events.polkadotXcm.sent.v1016006.is(event)) {
+          rec = events.polkadotXcm.sent.v1016006.decode(event);
+        } else if (events.polkadotXcm.sent.v1017003.is(event)) {
           rec = events.polkadotXcm.sent.v1017003.decode(event);
         } else {
           throw new Error("Unsupported spec");
@@ -204,7 +241,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
       ) {
         let rec: {
           id: Bytes;
-          origin: AggregateMessageOrigin;
+          origin: AggregateMessageOrigin | AggregateMessageOriginV1013000;
           success?: boolean;
           error?: ProcessMessageError | ProcessMessageErrorV1013000;
         };

@@ -16,10 +16,10 @@ const SUBSQUID_NETWORK =
 
 const START_BLOCK = process.env["START_BLOCK_ASSETHUB"]
   ? parseInt(process.env["START_BLOCK_ASSETHUB"])
-  : 9102700;
+  : 9102740;
 
 const RPC_URL =
-  process.env["RPC_ASSETHUB"] || "wss://statemint.api.onfinality.io/public-ws";
+  process.env["RPC_ASSETHUB"] || "wss://asset-hub-westend-rpc.dwellir.com";
 
 export const processor = new SubstrateBatchProcessor()
   // Lookup archive by the network name in Subsquid registry

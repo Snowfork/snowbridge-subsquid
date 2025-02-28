@@ -12,14 +12,14 @@ import * as gateway from "./abi/Gateway";
 
 export const GATEWAY_ADDRESS =
   process.env["GATEWAY_ADDRESS"] ||
-  "0x27ca963c279c93801941e1eb8799c23f407d68e7".toLowerCase();
+  "0x9ed8b47bc3417e3bd0507adc06e56e2fa360a4e9".toLowerCase();
 
 export const SUBSQUID_NETWORK =
-  process.env["SUBSQUID_NETWORK_ETHEREUM"] || "ethereum-sepolia";
+  process.env["SUBSQUID_NETWORK_ETH"] || "ethereum-sepolia";
 
-export const ETH_START_BLOCK = process.env.ETH_START_BLOCK
-  ? parseInt(process.env.ETH_START_BLOCK)
-  : 19715869;
+export const START_BLOCK = process.env["START_BLOCK_ETH"]
+  ? parseInt(process.env["START_BLOCK_ETH"])
+  : 6675223;
 
 export const processor = new EvmBatchProcessor()
   // Lookup archive by the network name in Subsquid registry
@@ -42,7 +42,7 @@ export const processor = new EvmBatchProcessor()
     },
   })
   .setBlockRange({
-    from: ETH_START_BLOCK,
+    from: START_BLOCK,
   })
   .addLog({
     address: [GATEWAY_ADDRESS],

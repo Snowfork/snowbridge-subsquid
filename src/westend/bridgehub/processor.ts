@@ -12,14 +12,14 @@ import {
 import { events } from "./types";
 
 const SUBSQUID_NETWORK =
-  process.env["SUBSQUID_NETWORK_BRIDGEHUB"] || "bridge-hub-polkadot";
+  process.env["SUBSQUID_NETWORK_BRIDGEHUB"] || "bridge-hub-westend";
 
 const START_BLOCK = process.env["START_BLOCK_BRIDGEHUB"]
   ? parseInt(process.env["START_BLOCK_BRIDGEHUB"])
-  : 2776300;
+  : 6000000;
 
 const RPC_URL =
-  process.env["RPC_BRIDGEHUB"] || "wss://bridge-hub-polkadot-rpc.dwellir.com";
+  process.env["RPC_BRIDGEHUB"] || "wss://bridge-hub-westend-rpc.dwellir.com";
 
 export const processor = new SubstrateBatchProcessor()
   // Lookup archive by the network name in Subsquid registry
