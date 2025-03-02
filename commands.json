@@ -69,7 +69,12 @@
     "process:ethereum:westend": {
       "description": "Load .env and start the squid processor",
       "deps": ["build"],
-      "cmd": ["node", "--require=dotenv/config", "lib/westend/ethereum/main.js"]
+      "cmd": [
+        "node",
+        "--require=ts-node/register",
+        "--require=dotenv/config",
+        "src/westend/ethereum/main.ts"
+      ]
     },
     "generateMeta:bridgehub": {
       "description": "Generate metadata for bridge hub",
@@ -117,8 +122,9 @@
       "deps": ["build"],
       "cmd": [
         "node",
+        "--require=ts-node/register",
         "--require=dotenv/config",
-        "lib/westend/bridgehub/main.js"
+        "src/westend/bridgehub/main.ts"
       ]
     },
     "generateMeta:assethub": {
@@ -165,7 +171,12 @@
     "process:assethub:westend": {
       "description": "Load .env and start the squid processor",
       "deps": ["build"],
-      "cmd": ["node", "--require=dotenv/config", "lib/westend/assethub/main.js"]
+      "cmd": [
+        "node",
+        "--require=ts-node/register",
+        "--require=dotenv/config",
+        "src/westend/assethub/main.ts"
+      ]
     },
     "postprocess": {
       "description": "Aggregate data from multiple tables",

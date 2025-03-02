@@ -138,7 +138,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         if (events.polkadotXcm.sent.v244.is(event)) {
           rec = events.polkadotXcm.sent.v244.decode(event);
         } else {
-          throw new Error("Unsupported spec");
+          throw Object.assign(new Error("Unsupported spec"), event);
         }
         // Filter message which contains instructions:
         // ENA:[WithdrawAsset,ClearOrigin,BuyExecution,SetAppendix,InitiateReserveWithdraw,SetTopic]
@@ -258,7 +258,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
         } else if (events.messageQueue.processingFailed.v244.is(event)) {
           rec = events.messageQueue.processingFailed.v244.decode(event);
         } else {
-          throw new Error("Unsupported spec");
+          throw Object.assign(new Error("Unsupported spec"), event);
         }
         // Filter message from AH
         if (

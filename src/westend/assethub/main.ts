@@ -72,7 +72,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         } else if (events.messageQueue.processingFailed.v1013000.is(event)) {
           rec = events.messageQueue.processingFailed.v1013000.decode(event);
         } else {
-          throw new Error("Unsupported spec");
+          throw Object.assign(new Error("Unsupported spec"), event);
         }
         // Filter message from non system parachain
         if (rec.origin.__kind == "Sibling" && rec.origin.value >= 2000) {
@@ -116,7 +116,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         } else if (events.polkadotXcm.sent.v1017003.is(event)) {
           rec = events.polkadotXcm.sent.v1017003.decode(event);
         } else {
-          throw new Error("Unsupported spec");
+          throw Object.assign(new Error("Unsupported spec"), event);
         }
         if (
           rec.destination.parents == 2 &&
@@ -252,7 +252,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
         } else if (events.messageQueue.processingFailed.v1013000.is(event)) {
           rec = events.messageQueue.processingFailed.v1013000.decode(event);
         } else {
-          throw new Error("Unsupported spec");
+          throw Object.assign(new Error("Unsupported spec"), event);
         }
         // Filter message from BH
         if (

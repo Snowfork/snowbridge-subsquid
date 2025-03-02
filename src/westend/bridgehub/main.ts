@@ -42,7 +42,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           rec =
             events.ethereumInboundQueue.messageReceived.v1016000.decode(event);
         } else {
-          throw new Error("Unsupported spec");
+          throw Object.assign(new Error("Unsupported spec"), event);
         }
         let message = new InboundMessageReceivedOnBridgeHub({
           id: event.id,
@@ -90,7 +90,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           rec =
             events.ethereumOutboundQueue.messageAccepted.v1016000.decode(event);
         } else {
-          throw new Error("Unsupported spec");
+          throw Object.assign(new Error("Unsupported spec"), event);
         }
         let message = new OutboundMessageAcceptedOnBridgeHub({
           id: event.id,
@@ -125,12 +125,16 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         };
         if (events.messageQueue.processed.v1004000.is(event)) {
           rec = events.messageQueue.processed.v1004000.decode(event);
+        } else if (events.messageQueue.processed.v1006000.is(event)) {
+          rec = events.messageQueue.processed.v1006000.decode(event);
         } else if (events.messageQueue.processingFailed.v1004000.is(event)) {
           rec = events.messageQueue.processingFailed.v1004000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1006000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1006000.decode(event);
         } else if (events.messageQueue.processingFailed.v1013000.is(event)) {
           rec = events.messageQueue.processingFailed.v1013000.decode(event);
         } else {
-          throw new Error("Unsupported spec");
+          throw Object.assign(new Error("Unsupported spec"), event);
         }
         // Filter message from AH
         if (
