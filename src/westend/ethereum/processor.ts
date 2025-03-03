@@ -14,12 +14,15 @@ export const GATEWAY_ADDRESS =
   process.env["GATEWAY_ADDRESS"] ||
   "0x9ed8b47bc3417e3bd0507adc06e56e2fa360a4e9".toLowerCase();
 
-export const SUBSQUID_NETWORK =
+const SUBSQUID_NETWORK =
   process.env["SUBSQUID_NETWORK_ETH"] || "ethereum-sepolia";
 
-export const START_BLOCK = process.env["START_BLOCK_ETH"]
+const START_BLOCK = process.env["START_BLOCK_ETH"]
   ? parseInt(process.env["START_BLOCK_ETH"])
   : 6675223;
+
+const RPC_URL =
+  process.env["RPC_ETH_HTTP"] || "https://rpc.ankr.com/eth_sepolia";
 
 export const processor = new EvmBatchProcessor()
   // Lookup archive by the network name in Subsquid registry
@@ -31,7 +34,7 @@ export const processor = new EvmBatchProcessor()
   .setRpcEndpoint({
     // Set via .env for local runs or via secrets when deploying to Subsquid Cloud
     // https://docs.subsquid.io/deploy-squid/env-variables/
-    url: assertNotNull(process.env.RPC_ETH_HTTP, "No RPC endpoint supplied"),
+    url: RPC_URL,
     // More RPC connection options at https://docs.subsquid.io/evm-indexing/configuration/initialization/#set-data-source
     rateLimit: 10,
   })

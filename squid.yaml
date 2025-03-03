@@ -1,7 +1,7 @@
 manifestVersion: subsquid.io/v0.1
-name: snowbridge-subsquid
+name: snowbridge-subsquid-polkadot
 version: 2
-description: Snowbridge squid
+description: Snowbridge squid for Polkadot
 build:
 deploy:
   addons:
@@ -56,7 +56,7 @@ deploy:
 scale:
   addons:
     postgres:
-      storage: 100G
+      storage: 10G
       profile: small
   processor:
     profile: medium

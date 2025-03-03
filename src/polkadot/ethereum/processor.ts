@@ -14,10 +14,10 @@ export const GATEWAY_ADDRESS =
   process.env["GATEWAY_ADDRESS"] ||
   "0x27ca963c279c93801941e1eb8799c23f407d68e7".toLowerCase();
 
-export const SUBSQUID_NETWORK =
+const SUBSQUID_NETWORK =
   process.env["SUBSQUID_NETWORK_ETH"] || "ethereum-mainnet";
 
-export const START_BLOCK = process.env["START_BLOCK_ETH"]
+const START_BLOCK = process.env["START_BLOCK_ETH"]
   ? parseInt(process.env["START_BLOCK_ETH"])
   : 19715869;
 
