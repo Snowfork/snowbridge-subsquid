@@ -1,0 +1,39 @@
+manifestVersion: subsquid.io/v0.1
+name: snowbridge-subsquid-westend
+version: 2
+description: Snowbridge squid for Westend
+build:
+deploy:
+  addons:
+    postgres:
+  migrate:
+    cmd: ["sqd", "migration:apply"]
+  processor:
+    - name: ethereum-processor
+      env:
+        RPC_ETH_HTTP: "https://rpc.ankr.com/eth_sepolia"
+        START_BLOCK_ETH: 6675223
+      cmd: ["sqd", "process:ethereum"]
+    - name: bridgehub-processor
+      env:
+        RPC_BRIDGEHUB: "wss://bridge-hub-polkadot-rpc.dwellir.com"
+        START_BLOCK_BRIDGEHUB: 2776300
+      cmd: ["sqd", "process:bridgehub"]
+    - name: assethub-processor
+      env:
+        RPC_ASSETHUB: "wss://asset-hub-polkadot-rpc.dwellir.com"
+        START_BLOCK_ASSETHUB: 6457397
+      cmd: ["sqd", "process:assethub"]
+    - name: post-processor
+      cmd: ["sqd", "postprocess"]
+  api:
+    cmd: ["sqd", "serve:prod"]
+scale:
+  addons:
+    postgres:
+      storage: 5G
+      profile: small
+  processor:
+    profile: small
+  api:
+    profile: small

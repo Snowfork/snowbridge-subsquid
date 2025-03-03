@@ -6,54 +6,58 @@ build:
 deploy:
   addons:
     postgres:
-    rpc:
-      - eth.http
-      - bridge-hub-polkadot.http
-      - asset-hub-polkadot.http
   migrate:
     cmd: ["sqd", "migration:apply"]
   processor:
     - name: ethereum-processor
       env:
         RPC_ETH_HTTP: ${{ secrets.RPC_ETH_HTTP }}
+        START_BLOCK_ETH: 19715869
       cmd: ["sqd", "process:ethereum"]
     - name: bridgehub-processor
       env:
-        RPC_BRIDGEHUB_POLKADOT: "wss://bridge-hub-polkadot-rpc.dwellir.com"
+        RPC_BRIDGEHUB: "wss://bridge-hub-polkadot-rpc.dwellir.com"
+        START_BLOCK_BRIDGEHUB: 2776300
       cmd: ["sqd", "process:bridgehub"]
     - name: assethub-processor
       env:
-        RPC_ASSETHUB_POLKADOT: "wss://asset-hub-polkadot-rpc.dwellir.com"
+        RPC_ASSETHUB: "wss://asset-hub-polkadot-rpc.dwellir.com"
+        START_BLOCK_ASSETHUB: 6457397
       cmd: ["sqd", "process:assethub"]
-    - name: post-processor
-      cmd: ["sqd", "postprocess"]
     - name: hydration-processor
       env:
         RPC_HYDRATION: "wss://hydration-rpc.n.dwellir.com"
+        START_BLOCK_HYDRATION: 5973113
       cmd: ["sqd", "process:parachain:hydration"]
     - name: moonbeam-processor
       env:
         RPC_MOONBEAM: "wss://moonbeam.ibp.network"
+        START_BLOCK_MOONBEAM: 8165770
       cmd: ["sqd", "process:parachain:moonbeam"]
     - name: acala-processor
       env:
         RPC_ACALA: "wss://acala-rpc-3.aca-api.network/ws"
+        START_BLOCK_ACALA: 7382962
       cmd: ["sqd", "process:parachain:acala"]
     - name: bifrost-processor
       env:
         RPC_BIFROST: "wss://bifrost-polkadot-rpc.dwellir.com"
+        START_BLOCK_BIFROST: 5701045
       cmd: ["sqd", "process:parachain:bifrost"]
     - name: mythos-processor
       env:
         RPC_MYTHOS: "wss://polkadot-mythos-rpc.polkadot.io"
+        START_BLOCK_MYTHOS: 2542302
       cmd: ["sqd", "process:parachain:mythos"]
+    - name: post-processor
+      cmd: ["sqd", "postprocess"]
   api:
     cmd: ["sqd", "serve:prod"]
 scale:
   dedicated: true
   addons:
     postgres:
-      storage: 200G
+      storage: 100G
       profile: medium
   processor:
     profile: medium

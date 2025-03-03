@@ -1,0 +1,24 @@
+{
+  "outDir": "../../src/parachains/mythos/types",
+  "specVersions": "mythos-versions.jsonl",
+  "pallets": {
+    "MessageQueue": {
+      "events": ["Processed", "ProcessingFailed"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "Assets": {
+      "events": ["Created", "Issued", "Burned"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "PolkadotXcm": {
+      "events": ["Sent"],
+      "calls": ["transfer_assets_using_type_and_then"],
+      "storage": [],
+      "constants": []
+    }
+  }
+}

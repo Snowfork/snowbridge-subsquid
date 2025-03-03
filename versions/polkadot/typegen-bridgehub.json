@@ -1,0 +1,24 @@
+{
+  "outDir": "../../src/polkadot/bridgehub/types",
+  "specVersions": "bridgehub-versions.jsonl",
+  "pallets": {
+    "EthereumInboundQueue": {
+      "events": ["MessageReceived"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "EthereumOutboundQueue": {
+      "events": ["MessageAccepted"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "MessageQueue": {
+      "events": ["Processed", "ProcessingFailed"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    }
+  }
+}

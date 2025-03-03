@@ -7,21 +7,40 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Launch process ethereum",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "env": { "SQD_DEBUG": "*" },
+      "args": ["src/polkadot/ethereum/main.ts"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch process ethereum westend-sepolia",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "env": { "SQD_DEBUG": "*" },
+      "args": ["src/westend/ethereum/main.ts"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Launch process bridgehub",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["src/bridgehub/main.ts"],
+      "args": ["src/polkadot/bridgehub/main.ts"],
       "env": { "SQD_DEBUG": "*" },
       "console": "internalConsole"
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch process ethereum",
+      "name": "Launch process bridgehub westend",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
+      "args": ["src/westend/bridgehub/main.ts"],
       "env": { "SQD_DEBUG": "*" },
-      "args": ["src/ethereum/main.ts"]
+      "console": "internalConsole"
     },
     {
       "type": "node",
@@ -29,7 +48,16 @@
       "name": "Launch process assethub",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["src/assethub/main.ts"],
+      "args": ["src/polkadot/assethub/main.ts"],
+      "env": { "SQD_DEBUG": "*" }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch process assethub westend",
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
+      "cwd": "${workspaceRoot}",
+      "args": ["src/westend/assethub/main.ts"],
       "env": { "SQD_DEBUG": "*" }
     },
     {
@@ -38,7 +66,7 @@
       "name": "Launch process moonbeam",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["src/parachains/moonbeam/main.ts"],
+      "args": ["src/polkadot/parachains/moonbeam/main.ts"],
       "env": { "SQD_DEBUG": "*" }
     },
     {
@@ -47,7 +75,7 @@
       "name": "Launch process hydration",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["src/parachains/hydration/main.ts"],
+      "args": ["src/polkadot/parachains/hydration/main.ts"],
       "env": { "SQD_DEBUG": "*" }
     },
     {
@@ -56,7 +84,7 @@
       "name": "Launch process bifrost",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["src/parachains/bifrost/main.ts"],
+      "args": ["src/polkadot/parachains/bifrost/main.ts"],
       "env": { "SQD_DEBUG": "*" }
     },
     {
@@ -65,7 +93,7 @@
       "name": "Launch process acala",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["src/parachains/acala/main.ts"],
+      "args": ["src/polkadot/parachains/acala/main.ts"],
       "env": { "SQD_DEBUG": "*" }
     },
     {
@@ -74,7 +102,7 @@
       "name": "Launch process mythos",
       "runtimeArgs": ["-r", "ts-node/register", "-r", "dotenv/config"],
       "cwd": "${workspaceRoot}",
-      "args": ["src/parachains/mythos/main.ts"],
+      "args": ["src/polkadot/parachains/mythos/main.ts"],
       "env": { "SQD_DEBUG": "*" }
     },
     {
